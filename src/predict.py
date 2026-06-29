@@ -43,11 +43,37 @@ def run_inference():
         opt_meta = src_opt.meta.copy()
         # Read Green, Red, NIR (bands 1, 2, 3)
         opt_data = src_opt.read([1, 2, 3])
+        opt_transform = src_opt.transform
         
     print(f"📖 Reading Sentinel-1 SAR: {args.sar_radar}")
     with rasterio.open(args.sar_radar) as src_sar:
         sar_data = src_sar.read([1, 2])
         
+    # Crop to 256x256 from the center of each image to prevent CUDA Out Of Memory
+    print("✂️ Cropping images to center 256x256 patch to avoid GPU OOM...")
+    
+    # Optical Center Crop
+    c_opt, h_opt, w_opt = opt_data.shape
+    start_h_opt = max(0, (h_opt - 256) // 2)
+    start_w_opt = max(0, (w_opt - 256) // 2)
+    opt_data = opt_data[:, start_h_opt:start_h_opt+256, start_w_opt:start_w_opt+256]
+    
+    # Update GeoTIFF transform for the cropped bounds
+    from rasterio.windows import Window
+    window = Window(start_w_opt, start_h_opt, 256, 256)
+    cropped_transform = rasterio.windows.transform(window, opt_transform)
+    opt_meta.update({
+        "height": 256,
+        "width": 256,
+        "transform": cropped_transform
+    })
+    
+    # SAR Center Crop
+    c_sar, h_sar, w_sar = sar_data.shape
+    start_h_sar = max(0, (h_sar - 256) // 2)
+    start_w_sar = max(0, (w_sar - 256) // 2)
+    sar_data = sar_data[:, start_h_sar:start_h_sar+256, start_w_sar:start_w_sar+256]
+    
     # 2. Preprocess / Normalize data
     # Standard normalization matching dataset.py
     opt_data = opt_data.astype(np.float32) / 10000.0  # Assumes 16-bit DN values normalized to [0,1]
