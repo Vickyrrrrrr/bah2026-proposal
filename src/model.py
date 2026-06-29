@@ -19,14 +19,15 @@ class ResNetBlock(nn.Module):
 
 class MultiHeadCrossAttention(nn.Module):
     """
-    Fuses feature maps from the optical and SAR streams.
-    Query comes from the optical stream, Key and Value from the SAR stream.
+    Fuses feature maps from the optical and SAR streams at a downsampled bottleneck resolution
+    (e.g., 32x32) to prevent quadratic memory explosion, then upsamples and fuses back.
     """
-    def __init__(self, embed_dim, num_heads=8):
+    def __init__(self, embed_dim, num_heads=8, bottleneck_size=32):
         super().__init__()
         self.embed_dim = embed_dim
         self.num_heads = num_heads
         self.head_dim = embed_dim // num_heads
+        self.bottleneck_size = bottleneck_size
         
         assert self.head_dim * num_heads == embed_dim, "embed_dim must be divisible by num_heads"
         
@@ -39,20 +40,29 @@ class MultiHeadCrossAttention(nn.Module):
     def forward(self, opt_feat, sar_feat):
         B, C, H, W = opt_feat.shape
         
-        # Project queries, keys, and values
-        q = self.q_proj(opt_feat).view(B, self.num_heads, self.head_dim, H * W).transpose(-2, -1) # (B, heads, HW, head_dim)
-        k = self.k_proj(sar_feat).view(B, self.num_heads, self.head_dim, H * W)                  # (B, heads, head_dim, HW)
-        v = self.v_proj(sar_feat).view(B, self.num_heads, self.head_dim, H * W).transpose(-2, -1) # (B, heads, HW, head_dim)
+        # 1. Downsample to bottleneck resolution (e.g. 32x32) using adaptive average pooling
+        opt_down = F.adaptive_avg_pool2d(opt_feat, (self.bottleneck_size, self.bottleneck_size))
+        sar_down = F.adaptive_avg_pool2d(sar_feat, (self.bottleneck_size, self.bottleneck_size))
         
-        # Calculate attention scores
-        attn_scores = torch.matmul(q, k) / (self.head_dim ** 0.5)  # (B, heads, HW, HW)
+        h, w = self.bottleneck_size, self.bottleneck_size
+        
+        # 2. Project queries, keys, and values
+        q = self.q_proj(opt_down).view(B, self.num_heads, self.head_dim, h * w).transpose(-2, -1) # (B, heads, hw, head_dim)
+        k = self.k_proj(sar_down).view(B, self.num_heads, self.head_dim, h * w)                  # (B, heads, head_dim, hw)
+        v = self.v_proj(sar_down).view(B, self.num_heads, self.head_dim, h * w).transpose(-2, -1) # (B, heads, hw, head_dim)
+        
+        # 3. Calculate attention scores
+        attn_scores = torch.matmul(q, k) / (self.head_dim ** 0.5)  # (B, heads, hw, hw)
         attn_weights = F.softmax(attn_scores, dim=-1)
         
-        # Compute fused values
-        out = torch.matmul(attn_weights, v)  # (B, heads, HW, head_dim)
-        out = out.transpose(-2, -1).contiguous().view(B, C, H, W)
+        # 4. Compute fused values at bottleneck resolution
+        out = torch.matmul(attn_weights, v)  # (B, heads, hw, head_dim)
+        out = out.transpose(-2, -1).contiguous().view(B, C, h, w)
         
-        return opt_feat + self.out_proj(out)
+        # 5. Upsample fused features back to original H, W
+        out_up = F.interpolate(out, size=(H, W), mode='bilinear', align_corners=False)
+        
+        return opt_feat + self.out_proj(out_up)
 
 class LISS4ClearNet(nn.Module):
     """
