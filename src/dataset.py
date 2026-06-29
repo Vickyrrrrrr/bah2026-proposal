@@ -43,18 +43,23 @@ class SEN12MS_LISS4_SimulationDataset(Dataset):
                         match = re.search(r's1_(\d+_p\d+)\.tif$', filename)
                         if match:
                             idx = match.group(1)
+                            roi_id = idx.split('_')[0] # Extract ROI ID (e.g., "15" from "15_p516")
                             
-                            # Construct possible candidates for Cloudy
+                            # Construct possible candidates for Cloudy (nested and flat)
                             s2c_candidates = [
+                                s2c_dir / f"s2_cloudy_{roi_id}" / f"ROIs1158_spring_s2_cloudy_{idx}.tif",
+                                s2c_dir / f"s2_cloudy_{roi_id}" / f"s2_cloudy_{idx}.tif",
+                                s2c_dir / f"s2_{roi_id}" / f"s2_{idx}.tif",
                                 s2c_dir / f"ROIs1158_spring_s2_cloudy_{idx}.tif",
-                                s2c_dir / f"s2_cloudy_{idx}.tif",
                                 s2c_dir / f"s2_{idx}.tif"
                             ]
-                            # Construct possible candidates for Clear
+                            # Construct possible candidates for Clear (nested and flat)
                             s2cf_candidates = [
+                                s2cf_dir / f"s2_{roi_id}" / f"ROIs1158_spring_s2_{idx}.tif",
+                                s2cf_dir / f"s2_{roi_id}" / f"s2_{idx}.tif",
+                                s2cf_dir / f"s2_cloud_free_{roi_id}" / f"s2_cloud_free_{idx}.tif",
                                 s2cf_dir / f"ROIs1158_spring_s2_{idx}.tif",
-                                s2cf_dir / f"s2_{idx}.tif",
-                                s2cf_dir / f"s2_cloud_free_{idx}.tif"
+                                s2cf_dir / f"s2_{idx}.tif"
                             ]
                             
                             s2c_f = next((c for c in s2c_candidates if c.exists()), None)
