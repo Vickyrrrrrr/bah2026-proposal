@@ -48,8 +48,8 @@ def train(args):
     train_ds = SEN12MS_LISS4_SimulationDataset(args.data_dir, split="train")
     val_ds = SEN12MS_LISS4_SimulationDataset(args.data_dir, split="val")
     
-    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=2, pin_memory=True)
-    val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, num_workers=2, pin_memory=True)
+    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=0, pin_memory=True)
+    val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, num_workers=0, pin_memory=True)
     
     # 2. Instantiate Model, Optimizer, and Cosine Scheduler
     model = LISS4ClearNet(num_res_blocks=args.num_res_blocks, channel_dim=args.channel_dim).to(device)
