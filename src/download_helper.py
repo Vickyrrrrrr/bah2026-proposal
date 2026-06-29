@@ -73,9 +73,9 @@ if __name__ == "__main__":
         filename = os.path.basename(url)
         # Check if the folder is already extracted to avoid repeating work
         subfolder_map = {
-            "ROIs1158_spring_s1.tar.gz": "s1",
-            "ROIs1158_spring_s2_cloudy.tar.gz": "s2_cloudy",
-            "ROIs1158_spring_s2.tar.gz": "s2"
+            "ROIs1158_spring_s1.tar.gz": "ROIs1158_spring_s1",
+            "ROIs1158_spring_s2_cloudy.tar.gz": "ROIs1158_spring_s2_cloudy",
+            "ROIs1158_spring_s2.tar.gz": "ROIs1158_spring_s2"
         }
         check_folder = os.path.join(data_dir, subfolder_map[filename])
         if os.path.exists(check_folder) and len(os.listdir(check_folder)) > 0:

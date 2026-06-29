@@ -26,22 +26,36 @@ class SEN12MS_LISS4_SimulationDataset(Dataset):
             for season_dir in self.root.iterdir():
                 if not season_dir.is_dir():
                     continue
-                s1_dir = season_dir / 's1'
-                s2c_dir = season_dir / 's2_cloudy'
-                s2cf_dir = season_dir / 's2_cloud_free'
+                s1_dir = season_dir / 'ROIs1158_spring_s1'
+                s2c_dir = season_dir / 'ROIs1158_spring_s2_cloudy'
+                s2cf_dir = season_dir / 'ROIs1158_spring_s2'
+                
+                # Fallback support for standard folder names
+                if not s1_dir.exists():
+                    s1_dir = season_dir / 's1'
+                if not s2c_dir.exists():
+                    s2c_dir = season_dir / 's2_cloudy'
                 if not s2cf_dir.exists():
-                    s2cf_dir = season_dir / 's2'  # Fallback for mono-temporal extraction
+                    s2cf_dir = season_dir / 's2_cloud_free'
                 
                 if s1_dir.exists() and s2c_dir.exists() and s2cf_dir.exists():
-                    s1_files = sorted(s1_dir.glob('*.tif'))
+                    s1_files = sorted(s1_dir.glob('**/*.tif'))
                     for s1_f in s1_files:
-                        # Extract the unique index suffix from file name (e.g. s1_123.tif)
-                        idx = s1_f.stem.split('_')[-1]
-                        s2c_f = s2c_dir / f"s2_{idx}.tif"
-                        s2cf_f = s2cf_dir / f"s2_{idx}.tif"
-                        
-                        if s2c_f.exists() and s2cf_f.exists():
-                            self.pairs.append((s1_f, s2c_f, s2cf_f))
+                        filename = s1_f.name
+                        if '_s1_' in filename:
+                            # Extract suffix index (e.g. "1_p15" from "ROIs1158_spring_s1_1_p15.tif")
+                            idx = filename.split('_s1_')[-1].replace('.tif', '')
+                            s2c_f = s2c_dir / f"ROIs1158_spring_s2_cloudy_{idx}.tif"
+                            s2cf_f = s2cf_dir / f"ROIs1158_spring_s2_{idx}.tif"
+                            
+                            # Fallback if standard suffix is used
+                            if not s2c_f.exists():
+                                s2c_f = s2c_dir / f"s2_{idx}.tif"
+                            if not s2cf_f.exists():
+                                s2cf_f = s2cf_dir / f"s2_{idx}.tif"
+                                
+                            if s2c_f.exists() and s2cf_f.exists():
+                                self.pairs.append((s1_f, s2c_f, s2cf_f))
         
         n_samples = len(self.pairs)
         if split == 'train':
