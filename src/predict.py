@@ -92,8 +92,8 @@ def run_inference():
         db_vv = 20 * np.log10(sar_data[0] + 1e-5) - 58.0
         db_vh = 20 * np.log10(sar_data[1] + 1e-5) - 58.0
         sar_db = np.stack([db_vv, db_vh], axis=0)
-        sar_db = np.clip(sar_db, -25.0, 0.0)
-        sar_data = sar_db / 100.0
+        sar_db = np.clip(sar_db, -35.0, 0.0)
+        sar_data = sar_db / 10000.0
     else:
         # standard scaling if pre-converted to dB
         sar_data = np.clip(sar_data / 10000.0, -1.0, 1.0)
