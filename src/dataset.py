@@ -29,6 +29,8 @@ class SEN12MS_LISS4_SimulationDataset(Dataset):
                 s1_dir = season_dir / 's1'
                 s2c_dir = season_dir / 's2_cloudy'
                 s2cf_dir = season_dir / 's2_cloud_free'
+                if not s2cf_dir.exists():
+                    s2cf_dir = season_dir / 's2'  # Fallback for mono-temporal extraction
                 
                 if s1_dir.exists() and s2c_dir.exists() and s2cf_dir.exists():
                     s1_files = sorted(s1_dir.glob('*.tif'))
