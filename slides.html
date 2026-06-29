@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LISS-4 ClearNet Slideshow</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/theme/white.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Space+Mono&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #0f0f12;
+      --text-muted: #555562;
+      --accent: #0f4c81;
+      --border: #e2e2ea;
+    }
+
+    .reveal {
+      font-family: 'Inter', sans-serif !important;
+      background-color: var(--bg) !important;
+      color: var(--text) !important;
+    }
+
+    .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+      font-family: 'Outfit', sans-serif !important;
+      color: var(--text) !important;
+      text-transform: none !important;
+      font-weight: 700 !important;
+      letter-spacing: -0.01em !important;
+    }
+
+    .reveal h2 {
+      font-size: 2.2rem !important;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0.5rem;
+      margin-bottom: 1.5rem !important;
+      text-align: left;
+    }
+
+    .reveal p, .reveal li {
+      color: var(--text-muted) !important;
+      font-size: 0.95rem !important;
+      line-height: 1.6 !important;
+      text-align: left;
+    }
+
+    .reveal ul {
+      width: 100%;
+      margin-left: 1.5rem !important;
+    }
+
+    .reveal li {
+      margin-bottom: 0.8rem;
+    }
+
+    .reveal strong {
+      color: var(--text) !important;
+    }
+
+    .mono {
+      font-family: 'Space Mono', monospace !important;
+      font-size: 0.85em !important;
+    }
+
+    /* Floating Export Button */
+    .export-panel {
+      position: fixed;
+      top: 1.5rem;
+      right: 1.5rem;
+      z-index: 999;
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-export {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.5rem 1rem;
+      background: #fafafc;
+      color: #33333f;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .btn-export:hover {
+      background: #f1f1f5;
+      border-color: #c8c8d3;
+    }
+
+    /* Custom slide layouts */
+    .slide-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .slide-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.75rem !important;
+    }
+    .slide-table th, .slide-table td {
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      text-align: left;
+    }
+    .slide-table th {
+      background: #fafafc;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .slide-table td {
+      color: var(--text-muted);
+    }
+
+    .equation-box {
+      background: #fafafc;
+      border: 1px solid var(--border);
+      padding: 1rem;
+      border-radius: 4px;
+      margin: 1rem 0;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem !important;
+      text-align: center;
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating Controllers -->
+  <div class="export-panel">
+    <button class="btn-export" onclick="exportToPPTX()">📥 Download Google Slides (.pptx)</button>
+  </div>
+
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- Slide 1: Title -->
+      <section style="text-align: left;">
+        <div style="font-family: 'Space Mono', monospace; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 1.5rem;">
+          Bharatiya Antariksh Hackathon 2026 · Challenge #2
+        </div>
+        <h1 style="font-size: 2.8rem !important; line-height: 1.15; margin-bottom: 1.5rem !important; text-align: left;">
+          LISS-4 ClearNet
+        </h1>
+        <p style="font-size: 1.25rem !important; margin-bottom: 2.5rem !important;">
+          Multi-Modal SAR-Optical Fusion for Automated Cloud Removal in High-Resolution Earth Observation
+        </p>
+        <div style="border-top: 1px solid var(--border); padding-top: 1rem; font-size: 0.85rem !important; color: var(--text-muted);">
+          <strong>Team:</strong> Beyond the Clouds &nbsp;|&nbsp; <strong>Challenge:</strong> Cloud Removal in LISS-4 Images
+        </div>
+      </section>
+
+      <!-- Slide 2: The Problem -->
+      <section>
+        <h2>The Monsoon Optical Blind Spot</h2>
+        <div class="slide-grid">
+          <div>
+            <ul>
+              <li><strong>Cloud Cover Obstruction:</strong> Persistent monsoon cloud cover blocks optical cameras (LISS-4) during critical agricultural cycles.</li>
+              <li><strong>Indian Farm Resolution:</strong> Average farm holdings are extremely small (&lt; 1 ha). Global 10m sensors suffer from spectral mixing; LISS-4's 5.8m resolution is essential.</li>
+              <li><strong>Information Loss:</strong> Standard interpolations fail to preserve spectral fidelity under clouds, ruining vegetation classification.</li>
+            </ul>
+          </div>
+          <div style="background: #fafafc; border: 1px solid var(--border); padding: 1.5rem; border-radius: 4px; font-size: 0.8rem;">
+            <strong style="color: var(--accent); display:block; margin-bottom:0.5rem;">ISRO Core Requirement</strong>
+            Continuous, cloud-free 5.8m optical imagery is critical for PMFBY crop insurance verification and crop classification.
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 3: The Solution -->
+      <section>
+        <h2>Multi-Sensor Data Fusion</h2>
+        <div class="slide-grid">
+          <div>
+            <ul>
+              <li><strong>SAR Wave Penetration:</strong> Sentinel-1 C-band Synthetic Aperture Radar (SAR) waves penetrate clouds completely, bouncing off the crop structures.</li>
+              <li><strong>Cross-Modal Mapping:</strong> ClearNet maps geometric backscatter textures from the SAR stream into the optical reflection space.</li>
+              <li><strong>Simulated LISS-4 Output:</strong> Generates synthetic Green, Red, and Near-Infrared (NIR) bands matching the target sensor grid.</li>
+            </ul>
+          </div>
+          <div style="background: #fafafc; border: 1px solid var(--border); padding: 1.2rem; border-radius: 4px; text-align: center;">
+            <div class="mono" style="font-weight:600; font-size:0.75rem; margin-bottom:0.8rem; color:var(--accent);">DATAFLOW HARNESS</div>
+            <div style="font-size:0.75rem; color:var(--text-muted); line-height: 1.5;">
+              Cloudy LISS-4 (Optical)<br>+<br>Sentinel-1 (SAR Radar)<br>↓<br><strong>ClearNet Engine</strong><br>↓<br>Clear-Sky LISS-4 Product
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 4: Neural Network Architecture -->
+      <section>
+        <h2>ClearNet Architecture</h2>
+        <ul>
+          <li><strong>Dual-Branch Encoder:</strong> Separates feature learning for 3-band cloudy optical and 2-band SAR inputs.</li>
+          <li><strong>Multi-Head Cross-Attention:</strong> Fuses structural radar keys into the optical stream at a downsampled resolution to prevent VRAM overflow.</li>
+          <li><strong>Deep Residual Decoder:</strong> Synthesizes cloud-free pixel values using a loop of 16 ResNet blocks.</li>
+        </ul>
+        <div class="equation-box">
+          Attention(Q, K, V) = softmax( (Q Kᵀ) / √d_k ) V
+        </div>
+      </section>
+
+      <!-- Slide 5: Custom Loss Function -->
+      <section>
+        <h2>NDVI Vegetation Preservation Loss</h2>
+        <div class="slide-grid">
+          <div>
+            <ul>
+              <li><strong>Spectral Distortion:</strong> Standard generators distort spectral ratios, ruining vegetation index calculations.</li>
+              <li><strong>Joint Loss Formulation:</strong> Enforces pixel-wise matching alongside index preservation:</li>
+            </ul>
+            <div class="equation-box">
+              L_total = L_MSE + λ L_NDVI
+            </div>
+          </div>
+          <div>
+            <ul>
+              <li><strong>NDVI Formula:</strong> Ensures the ratio between Near-Infrared (NIR) and Red channels is preserved:</li>
+            </ul>
+            <div class="equation-box" style="font-size:0.75rem !important;">
+              NDVI = (NIR - Red) / (NIR + Red)
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 6: Preprocessing & Calibration -->
+      <section>
+        <h2>Data Preprocessing Pipeline</h2>
+        <ul>
+          <li><strong>UTM Grid Warping:</strong> Automatically resamples 10m Sentinel-1 SAR onto the 5.8m LISS-4 coordinate grid using bilinear warping.</li>
+          <li><strong>Amplitude-to-dB Calibration:</strong> Converts raw integer amplitude to logarithmic decibels to match the expected training scale:
+            <div class="equation-box" style="display:inline-block; padding: 4px 10px; margin: 5px 0;">
+              dB = 20 * log10(amplitude) - 58.0
+            </div>
+          </li>
+          <li><strong>Standardized Scaling:</strong> Restricts optical to [0.0, 1.0] and scales SAR db to match the training distribution of [-0.003, 0.0].</li>
+        </ul>
+      </section>
+
+      <!-- Slide 7: Quantitative Evaluation -->
+      <section>
+        <h2>Benchmark Results</h2>
+        <table class="slide-table">
+          <thead>
+            <tr>
+              <th>Configuration</th>
+              <th>PSNR (Spatial)</th>
+              <th>SSIM (Structural)</th>
+              <th>SAM (Spectral)</th>
+              <th>Output Feature State</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Demo Baseline</strong> (10-Min Train)</td>
+              <td>19.6 dB</td>
+              <td>0.584</td>
+              <td>6.6°</td>
+              <td>Suppresses clouds; restores coarse field boundaries.</td>
+            </tr>
+            <tr>
+              <td><strong>Full-Scale Target</strong> (60+ Epochs)</td>
+              <td><strong>31.8 dB</strong></td>
+              <td><strong>0.850</strong></td>
+              <td><strong>&lt; 6.5°</strong></td>
+              <td>Restores high-frequency crop textures and field details.</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="font-size: 0.8rem !important; margin-top: 1rem;">
+          *SAM (Spectral Angle Mapper) measures spectral distortion; lower values confirm the output matches original vegetation signatures.
+        </p>
+      </section>
+
+      <!-- Slide 8: Value Proposition for ISRO -->
+      <section>
+        <h2>Integration with Bhoonidhi & Bhuvan</h2>
+        <ul>
+          <li><strong>Bhoonidhi Ingestion:</strong> Automatically triggers when new LISS-4 scenes have &gt; 10% cloud cover.</li>
+          <li><strong>Level-3 (L3) Product:</strong> Outputs georeferenced GeoTIFFs, making cloud-cleared imagery available in the Bhoonidhi catalog.</li>
+          <li><strong>Downstream Applications:</strong> Integrates directly into Bhuvan’s agricultural monitors and national crop insurance claims (PMFBY).</li>
+        </ul>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+  <script>
+    // Initialize Reveal.js
+    Reveal.initialize({
+      hash: true,
+      controls: true,
+      progress: true,
+      center: true,
+      transition: 'fade',
+      width: 960,
+      height: 700,
+      margin: 0.04
+    });
+
+    // Programmatic PPTX Export using PPTXGenJS
+    function exportToPPTX() {
+      let pptx = new PptxGenJS();
+      pptx.layout = 'LAYOUT_16x9';
+
+      // Design styling constants (Minimal White & Grey)
+      const bgColor = 'FFFFFF';
+      const textColor = '0F0F12';
+      const textMuted = '555562';
+      const accentColor = '0F4C81';
+      const borderLine = 'E2E2EA';
+      const panelColor = 'FAFAFC';
+      const fontHeader = 'Arial';
+      const fontBody = 'Arial';
+      const fontMono = 'Courier New';
+
+      // ----------------------------------------------------
+      // SLIDE 1: Title
+      // ----------------------------------------------------
+      let s1 = pptx.addSlide();
+      s1.background = { color: bgColor };
+      s1.addText("BHARATIYA ANTARIKSH HACKATHON 2026 · CHALLENGE #2", { x: 1.0, y: 1.5, w: 10, h: 0.4, fontSize: 11, fontFace: fontMono, color: accentColor, bold: true });
+      s1.addText("LISS-4 ClearNet", { x: 1.0, y: 2.0, w: 10, h: 0.8, fontSize: 40, fontFace: fontHeader, bold: true, color: textColor });
+      s1.addText("Multi-Modal SAR-Optical Fusion for Automated Cloud Removal in High-Resolution Earth Observation", { x: 1.0, y: 2.9, w: 10, h: 0.8, fontSize: 16, fontFace: fontBody, color: textMuted });
+      s1.addShape(pptx.shapes.LINE, { x: 1.0, y: 4.0, w: 11.33, h: 0, line: { color: borderLine, width: 1 } });
+      s1.addText("Team: Beyond the Clouds   |   Challenge: Cloud Removal in Satellite Imagery", { x: 1.0, y: 4.2, w: 10, h: 0.4, fontSize: 12, fontFace: fontBody, color: textMuted, bold: true });
+
+      // ----------------------------------------------------
+      // SLIDE 2: The Problem
+      // ----------------------------------------------------
+      let s2 = pptx.addSlide();
+      s2.background = { color: bgColor };
+      s2.addText("The Monsoon Optical Blind Spot", { x: 1.0, y: 0.6, w: 10, h: 0.6, fontSize: 24, fontFace: fontHeader, bold: true, color: textColor });
+      s2.addShape(pptx.shapes.LINE, { x: 1.0, y: 1.2, w: 11.33, h: 0, line: { color: borderLine, width: 2 } });
+      
+      let bullet2 = [
+        { text: "• Cloud Cover Obstruction:\n", options: { bold: true, color: textColor } },
+        { text: "Persistent monsoon cloud cover blocks optical cameras (LISS-4) during critical crop cycles.\n\n" },
+        { text: "• Indian Farm Resolution:\n", options: { bold: true, color: textColor } },
+        { text: "Average holdings are small (< 1 ha). LISS-4's 5.8m resolution is essential to prevent spectral mixing.\n\n" },
+        { text: "• Information Loss:\n", options: { bold: true, color: textColor } },
+        { text: "Standard spatial interpolations fail to preserve spectral ratios under thick cloud blocks." }
+      ];
+      s2.addText(bullet2, { x: 1.0, y: 1.6, w: 7.0, h: 4.5, fontSize: 13, fontFace: fontBody, color: textMuted, lineSpacing: 20 });
+      
+      // Panel box on the right
+      s2.addShape(pptx.shapes.RECTANGLE, { x: 8.5, y: 1.6, w: 3.8, h: 4.2, fill: { color: panelColor }, line: { color: borderLine, width: 1 } });
+      s2.addText("ISRO CORE REQUIREMENT", { x: 8.8, y: 1.9, w: 3.2, h: 0.4, fontSize: 11, fontFace: fontHeader, bold: true, color: accentColor });
+      s2.addText("Continuous, cloud-free 5.8m optical imagery is critical for PMFBY crop insurance verification, agricultural yield mapping, and land classification models during monsoon seasons.", { x: 8.8, y: 2.3, w: 3.2, h: 3.0, fontSize: 12, fontFace: fontBody, color: textMuted });
+
+      // ----------------------------------------------------
+      // SLIDE 3: The Solution
+      // ----------------------------------------------------
+      let s3 = pptx.addSlide();
+      s3.background = { color: bgColor };
+      s3.addText("Multi-Sensor Data Fusion", { x: 1.0, y: 0.6, w: 10, h: 0.6, fontSize: 24, fontFace: fontHeader, bold: true, color: textColor });
+      s3.addShape(pptx.shapes.LINE, { x: 1.0, y: 1.2, w: 11.33, h: 0, line: { color: borderLine, width: 2 } });
+
+      let bullet3 = [
+        { text: "• SAR Wave Penetration:\n", options: { bold: true, color: textColor } },
+        { text: "Sentinel-1 C-band SAR waves pass through cloud blocks, reflecting ground and crop structure.\n\n" },
+        { text: "• Cross-Modal Mapping:\n", options: { bold: true, color: textColor } },
+        { text: "ClearNet translates the geometric backscatter textures of SAR into the optical reflectance domain.\n\n" },
+        { text: "• Simulated LISS-4 Output:\n", options: { bold: true, color: textColor } },
+        { text: "Reconstructs synthetic Green, Red, and NIR bands aligned with the target coordinates." }
+      ];
+      s3.addText(bullet3, { x: 1.0, y: 1.6, w: 7.0, h: 4.5, fontSize: 13, fontFace: fontBody, color: textMuted, lineSpacing: 20 });
+
+      // Ingestion panel on the right
+      s3.addShape(pptx.shapes.RECTANGLE, { x: 8.5, y: 1.6, w: 3.8, h: 4.2, fill: { color: panelColor }, line: { color: borderLine, width: 1 } });
+      s3.addText("DATAFLOW STRUCTURE", { x: 8.8, y: 1.9, w: 3.2, h: 0.4, fontSize: 11, fontFace: fontHeader, bold: true, color: accentColor });
+      s3.addText("Cloudy LISS-4 (Optical)\n+\nSentinel-1 (SAR Radar)\n↓\nClearNet Inference\n↓\nClear-Sky LISS-4 Product", { x: 8.8, y: 2.3, w: 3.2, h: 3.0, fontSize: 13, fontFace: fontMono, color: textMuted, align: 'center' });
+
+      // ----------------------------------------------------
+      // SLIDE 4: Neural Network Architecture
+      // ----------------------------------------------------
+      let s4 = pptx.addSlide();
+      s4.background = { color: bgColor };
+      s4.addText("ClearNet Architecture", { x: 1.0, y: 0.6, w: 10, h: 0.6, fontSize: 24, fontFace: fontHeader, bold: true, color: textColor });
+      s4.addShape(pptx.shapes.LINE, { x: 1.0, y: 1.2, w: 11.33, h: 0, line: { color: borderLine, width: 2 } });
+
+      let bullet4 = [
+        { text: "• Dual-Branch Encoder:\n", options: { bold: true, color: textColor } },
+        { text: "Separates feature learning for 3-band cloudy optical and 2-band SAR inputs.\n\n" },
+        { text: "• Multi-Head Cross-Attention:\n", options: { bold: true, color: textColor } },
+        { text: "Maps structural radar features into the optical stream at a downsampled resolution to prevent VRAM overflow.\n\n" },
+        { text: "• Deep Residual Decoder:\n", options: { bold: true, color: textColor } },
+        { text: "Generates clear pixel values using a deep loop of residual convolutions." }
+      ];
+      s4.addText(bullet4, { x: 1.0, y: 1.6, w: 11.33, h: 3.2, fontSize: 13, fontFace: fontBody, color: textMuted, lineSpacing: 20 });
+      
+      // Equation Box
+      s4.addShape(pptx.shapes.RECTANGLE, { x: 1.0, y: 4.8, w: 11.33, h: 0.9, fill: { color: panelColor }, line: { color: borderLine, width: 1 } });
+      s4.addText("Attention(Q, K, V) = softmax( (Q Kᵀ) / √d_k ) V", { x: 1.2, y: 5.0, w: 11.0, h: 0.5, fontSize: 14, fontFace: fontMono, color: textColor, align: 'center' });
+
+      // ----------------------------------------------------
+      // SLIDE 5: Custom Loss Function
+      // ----------------------------------------------------
+      let s5 = pptx.addSlide();
+      s5.background = { color: bgColor };
+      s5.addText("NDVI Vegetation Preservation Loss", { x: 1.0, y: 0.6, w: 10, h: 0.6, fontSize: 24, fontFace: fontHeader, bold: true, color: textColor });
+      s5.addShape(pptx.shapes.LINE, { x: 1.0, y: 1.2, w: 11.33, h: 0, line: { color: borderLine, width: 2 } });
+
+      let bullet5 = [
+        { text: "• Spectral Distortion:\n", options: { bold: true, color: textColor } },
+        { text: "Standard generators distort pixel ratios, rendering index calculations useless.\n\n" },
+        { text: "• Joint Loss Optimization:\n", options: { bold: true, color: textColor } },
+        { text: "Enforces absolute pixel-wise reconstruction alongside ratio preservation." }
+      ];
+      s5.addText(bullet5, { x: 1.0, y: 1.6, w: 5.5, h: 3.0, fontSize: 13, fontFace: fontBody, color: textMuted, lineSpacing: 18 });
+      s5.addShape(pptx.shapes.RECTANGLE, { x: 1.0, y: 4.8, w: 5.5, h: 0.9, fill: { color: panelColor }, line: { color: borderLine, width: 1 } });
+      s5.addText("L_total = L_MSE + λ L_NDVI", { x: 1.1, y: 5.0, w: 5.3, h: 0.5, fontSize: 13, fontFace: fontMono, color: textColor, align: 'center' });
+
+      let bullet5R = [
+        { text: "• NDVI Preservation:\n", options: { bold: true, color: textColor } },
+        { text: "Maintains the mathematical relationship between the Near-Infrared (NIR) and Red channels." }
+      ];
+      s5.addText(bullet5R, { x: 6.8, y: 1.6, w: 5.5, h: 3.0, fontSize: 13, fontFace: fontBody, color: textMuted, lineSpacing: 18 });
+      s5.addShape(pptx.shapes.RECTANGLE, { x: 6.8, y: 4.8, w: 5.5, h: 0.9, fill: { color: panelColor }, line: { color: borderLine, width: 1 } });
+      s5.addText("NDVI = (NIR - Red) / (NIR + Red)", { x: 6.9, y: 5.0, w: 5.3, h: 0.5, fontSize: 13, fontFace: fontMono, color: textColor, align: 'center' });
+
+      // ----------------------------------------------------
+      // SLIDE 6: Preprocessing & Calibration
+      // ----------------------------------------------------
+      let s6 = pptx.addSlide();
+      s6.background = { color: bgColor };
+      s6.addText("Data Preprocessing Pipeline", { x: 1.0, y: 0.6, w: 10, h: 0.6, fontSize: 24, fontFace: fontHeader, bold: true, color: textColor });
+      s6.addShape(pptx.shapes.LINE, { x: 1.0, y: 1.2, w: 11.33, h: 0, line: { color: borderLine, width: 2 } });
+
+      let bullet6 = [
+        { text: "• UTM Grid Warping:\n", options: { bold: true, color: textColor } },
+        { text: "Automatically projects and resamples 10m Sentinel-1 SAR onto the 5.8m LISS-4 grid using bilinear warping.\n\n" },
+        { text: "• Amplitude-to-dB Calibration:\n", options: { bold: true, color: textColor } },
+        { text: "Converts raw integer amplitude values to logarithmic decibels:\n  dB = 20 * log10(amplitude) - 58.0\n\n" },
+        { text: "• Scale Normalization:\n", options: { bold: true, color: textColor } },
+        { text: "Optical bands scaled to [0.0, 1.0] and SAR db scaled to match the expected training range of [-0.003, 0.0]." }
+      ];
+      s6.addText(bullet6, { x: 1.0, y: 1.6, w: 11.33, h: 4.5, fontSize: 13, fontFace: fontBody, color: textMuted, lineSpacing: 20 });
+
+      // ----------------------------------------------------
+      // SLIDE 7: Quantitative Evaluation
+      // ----------------------------------------------------
+      let s7 = pptx.addSlide();
+      s7.background = { color: bgColor };
+      s7.addText("Benchmark Evaluation", { x: 1.0, y: 0.6, w: 10, h: 0.6, fontSize: 24, fontFace: fontHeader, bold: true, color: textColor });
+      s7.addShape(pptx.shapes.LINE, { x: 1.0, y: 1.2, w: 11.33, h: 0, line: { color: borderLine, width: 2 } });
+
+      // Add quantitative table
+      s7.addTable([
+        [
+          { text: "Configuration", options: { bold: true, fontFace: fontHeader } },
+          { text: "PSNR (Spatial)", options: { bold: true, fontFace: fontHeader } },
+          { text: "SSIM (Structural)", options: { bold: true, fontFace: fontHeader } },
+          { text: "SAM (Spectral)", options: { bold: true, fontFace: fontHeader } },
+          { text: "Output Characteristics", options: { bold: true, fontFace: fontHeader } }
+        ],
+        [
+          "Demo Baseline (10-Min)",
+          "19.6 dB",
+          "0.584",
+          "6.6°",
+          "Suppresses cloud layers; restores coarse field boundaries."
+        ],
+        [
+          "Full-Scale Target (60+ Epochs)",
+          "31.8 dB",
+          "0.850",
+          "< 6.5°",
+          "Full spatial and spectral reconstruction with sharp textures."
+        ]
+      ], { x: 1.0, y: 1.8, w: 11.33, h: 2.2, fontSize: 11, fontFace: fontBody, border: { color: borderLine, pt: 1 }, fill: 'FFFFFF', headerRow: true });
+
+      s7.addText("*SAM (Spectral Angle Mapper) measures spectral angle distortion in degrees. Lower values confirm high-fidelity vegetation index preservation.", { x: 1.0, y: 4.8, w: 11.33, h: 0.8, fontSize: 11, fontFace: fontBody, color: textMuted, italic: true });
+
+      // ----------------------------------------------------
+      // SLIDE 8: Value Proposition for ISRO
+      // ----------------------------------------------------
+      let s8 = pptx.addSlide();
+      s8.background = { color: bgColor };
+      s8.addText("Integration with Bhoonidhi & Bhuvan", { x: 1.0, y: 0.6, w: 10, h: 0.6, fontSize: 24, fontFace: fontHeader, bold: true, color: textColor });
+      s8.addShape(pptx.shapes.LINE, { x: 1.0, y: 1.2, w: 11.33, h: 0, line: { color: borderLine, width: 2 } });
+
+      let bullet8 = [
+        { text: "• Bhoonidhi Ingestion:\n", options: { bold: true, color: textColor } },
+        { text: "Triggers automatically when a newly ingested LISS-4 scene has >10% cloud cover.\n\n" },
+        { text: "• Level-3 (L3) Product Output:\n", options: { bold: true, color: textColor } },
+        { text: "Saves outputs as fully georeferenced GeoTIFFs, making cloud-cleared images searchable in the catalog.\n\n" },
+        { text: "• Downstream Integration:\n", options: { bold: true, color: textColor } },
+        { text: "Supplies clean optical layers directly to Bhuvan agricultural monitors and crop classification systems." }
+      ];
+      s8.addText(bullet8, { x: 1.0, y: 1.6, w: 11.33, h: 4.5, fontSize: 13, fontFace: fontBody, color: textMuted, lineSpacing: 20 });
+
+      // ----------------------------------------------------
+      // WRITE FILE
+      // ----------------------------------------------------
+      pptx.writeFile({ fileName: 'LISS4_ClearNet_Presentation.pptx' });
+    }
+  </script>
+</body>
+</html>
