@@ -75,30 +75,15 @@ def run_inference():
     sar_data = sar_data[:, start_h_sar:start_h_sar+256, start_w_sar:start_w_sar+256]
     
     # 2. Preprocess / Normalize data
-    print("🧹 Normalizing input data...")
+    print("🧹 Normalizing input data to match training scale...")
     opt_data = opt_data.astype(np.float32)
     sar_data = sar_data.astype(np.float32)
     
-    # Optical scaling & offset handling
-    if opt_data.max() > 1.0:
-        if opt_data.max() > 5000.0:  # Sentinel-2 with offset
-            opt_data = (opt_data - 1000.0) / 10000.0
-        else:  # LISS-4 standard 10-bit or 16-bit scaling
-            opt_data = opt_data / 10000.0
-            
-    # SAR amplitude-to-dB conversion & scaling
-    if sar_data.max() > 10.0:  # Raw amplitude values
-        db_vv = 20 * np.log10(sar_data[0] + 1e-5) - 58.0
-        db_vh = 20 * np.log10(sar_data[1] + 1e-5) - 58.0
-        sar_db = np.stack([db_vv, db_vh], axis=0)
-        sar_data = np.clip(sar_db, -25.0, 0.0)
-        
-    # Standard normalization matching dataset.py
-    sar_data = (sar_data + 25.0) / 25.0
+    # Normalize optical (reflectance scale / 3000.0 matching dataset.py)
+    opt_data = np.clip(opt_data / 3000.0, 0.0, 1.0)
     
-    # Final clip
-    opt_data = np.clip(opt_data, 0.0, 1.0)
-    sar_data = np.clip(sar_data, 0.0, 1.0)
+    # Normalize SAR (backscatter scale / 10000.0 matching dataset.py)
+    sar_data = np.clip(sar_data / 10000.0, -1.0, 1.0)
     
     # Ensure correct shapes: [C, H, W] -> [1, C, H, W]
     cloudy_tensor = torch.from_numpy(opt_data).unsqueeze(0).to(device)
@@ -113,9 +98,9 @@ def run_inference():
     print("⚡ Running model forward pass...")
     with torch.no_grad():
         pred_tensor = model(cloudy_tensor, sar_tensor)
-        # Denormalize output to original reflectance scale for GeoTIFF
+        # Denormalize output to original scale (reflectance * 3000.0 matching dataset.py)
         pred_np = pred_tensor.cpu().squeeze(0).numpy()
-        pred_scaled = (pred_np * 10000.0).astype(opt_meta['dtype'])
+        pred_scaled = (pred_np * 3000.0).astype(opt_meta['dtype'])
         
     # 5. Write Georeferenced GeoTIFF
     os.makedirs(os.path.dirname(args.output_tif), exist_ok=True)
