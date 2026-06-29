@@ -71,10 +71,12 @@ class SEN12MS_LISS4_SimulationDataset(Dataset):
         n_samples = len(self.pairs)
         if split == 'train':
             self.pairs = self.pairs[:int(0.85 * n_samples)]
+            self.pairs = self.pairs[::5]  # Subsample to 20% of data for fast hackathon run
         else:
             self.pairs = self.pairs[int(0.85 * n_samples):]
+            self.pairs = self.pairs[::5]  # Subsample validation to match
             
-        print(f"📁 Loaded SEN12MS-CR dataset split '{split}' with {len(self.pairs)} sample pairs.")
+        print(f"📁 Loaded SEN12MS-CR dataset split '{split}' with {len(self.pairs)} sample pairs (20% subsampled).")
 
     def __len__(self):
         return len(self.pairs)
