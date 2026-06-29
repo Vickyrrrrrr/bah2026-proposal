@@ -75,11 +75,28 @@ def run_inference():
     sar_data = sar_data[:, start_h_sar:start_h_sar+256, start_w_sar:start_w_sar+256]
     
     # 2. Preprocess / Normalize data
-    # Standard normalization matching dataset.py
-    opt_data = opt_data.astype(np.float32) / 10000.0  # Assumes 16-bit DN values normalized to [0,1]
-    sar_data = (sar_data.astype(np.float32) + 25.0) / 25.0  # Normalize backscatter dB
+    print("🧹 Normalizing input data...")
+    opt_data = opt_data.astype(np.float32)
+    sar_data = sar_data.astype(np.float32)
     
-    # Clip and clip limits
+    # Optical scaling & offset handling
+    if opt_data.max() > 1.0:
+        if opt_data.max() > 5000.0:  # Sentinel-2 with offset
+            opt_data = (opt_data - 1000.0) / 10000.0
+        else:  # LISS-4 standard 10-bit or 16-bit scaling
+            opt_data = opt_data / 10000.0
+            
+    # SAR amplitude-to-dB conversion & scaling
+    if sar_data.max() > 10.0:  # Raw amplitude values
+        db_vv = 20 * np.log10(sar_data[0] + 1e-5) - 58.0
+        db_vh = 20 * np.log10(sar_data[1] + 1e-5) - 58.0
+        sar_db = np.stack([db_vv, db_vh], axis=0)
+        sar_data = np.clip(sar_db, -25.0, 0.0)
+        
+    # Standard normalization matching dataset.py
+    sar_data = (sar_data + 25.0) / 25.0
+    
+    # Final clip
     opt_data = np.clip(opt_data, 0.0, 1.0)
     sar_data = np.clip(sar_data, 0.0, 1.0)
     
