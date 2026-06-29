@@ -16,10 +16,11 @@ class SEN12MS_LISS4_SimulationDataset(Dataset):
     # 0-indexed Sentinel-2 bands matching LISS-4: Green, Red, NIR
     LISS4_BAND_MAP = [2, 3, 7]
 
-    def __init__(self, root_dir, split='train', patch_size=256):
+    def __init__(self, root_dir, split='train', patch_size=256, cache=True):
         self.root = Path(root_dir)
         self.patch_size = patch_size
         self.pairs = []
+        self.cache = cache
         
         # Traverse all directories in the split
         if self.root.exists():
@@ -76,62 +77,83 @@ class SEN12MS_LISS4_SimulationDataset(Dataset):
             self.pairs = self.pairs[int(0.85 * n_samples):]
             self.pairs = self.pairs[::5]  # Subsample validation to match
             
-        print(f"📁 Loaded SEN12MS-CR dataset split '{split}' with {len(self.pairs)} sample pairs (20% subsampled).")
+        print(f"📁 Loaded SEN12MS-CR dataset split '{split}' with {len(self.pairs)} sample pairs.")
+        
+        if self.cache:
+            print("🧠 Pre-loading and caching dataset in system RAM for ultra-fast training...")
+            self.cached_samples = []
+            for i, (s1_path, s2c_path, s2cf_path) in enumerate(self.pairs):
+                # Read files (optimized to load only required bands from disk)
+                sar = self._read_tif(s1_path)
+                # 0-indexed [2, 3, 7] correspond to 1-indexed [3, 4, 8] for rasterio
+                cloudy = self._read_tif(s2c_path, rasterio_bands=[3, 4, 8])
+                clear = self._read_tif(s2cf_path, rasterio_bands=[3, 4, 8])
+                
+                # Normalize
+                sar = np.clip(sar / 10000.0, -1.0, 1.0)
+                cloudy = np.clip(cloudy / 3000.0, 0.0, 1.0)
+                clear = np.clip(clear / 3000.0, 0.0, 1.0)
+                
+                # Cache as float32 tensors to save memory
+                self.cached_samples.append((
+                    torch.tensor(sar, dtype=torch.float32),
+                    torch.tensor(cloudy, dtype=torch.float32),
+                    torch.tensor(clear, dtype=torch.float32)
+                ))
+            print(f"✅ Cached {len(self.cached_samples)} samples successfully.")
 
     def __len__(self):
         return len(self.pairs)
 
-    def _read_tif(self, path, bands=None):
+    def _read_tif(self, path, rasterio_bands=None):
         with rasterio.open(path) as src:
-            data = src.read().astype(np.float32)
-        if bands is not None:
-            data = data[bands]
+            if rasterio_bands is not None:
+                data = src.read(rasterio_bands).astype(np.float32)
+            else:
+                data = src.read().astype(np.float32)
         return data
 
     def __getitem__(self, idx):
-        s1_path, s2c_path, s2cf_path = self.pairs[idx]
-        
-        # Read files
-        sar = self._read_tif(s1_path)                         # (2, H, W)
-        cloudy_s2 = self._read_tif(s2c_path)                 # (13, H, W)
-        clear_s2 = self._read_tif(s2cf_path)                 # (13, H, W)
-        
-        # Extract LISS-4 bands
-        cloudy = cloudy_s2[self.LISS4_BAND_MAP]              # (3, H, W)
-        clear = clear_s2[self.LISS4_BAND_MAP]                # (3, H, W)
-        
-        # Normalize
-        # SAR is backscatter in dB, usually normalized to [-1, 1] by dividing by 10000.0 or clipping
-        sar = np.clip(sar / 10000.0, -1.0, 1.0)
-        # Optical is DN value, normalize to [0, 1]
-        cloudy = np.clip(cloudy / 3000.0, 0.0, 1.0)
-        clear = np.clip(clear / 3000.0, 0.0, 1.0)
+        if self.cache:
+            sar, cloudy, clear = self.cached_samples[idx]
+            # Create shallow copies of the tensors for slicing
+            sar, cloudy, clear = sar.clone(), cloudy.clone(), clear.clone()
+        else:
+            s1_path, s2c_path, s2cf_path = self.pairs[idx]
+            sar = self._read_tif(s1_path)
+            cloudy_s2 = self._read_tif(s2c_path)
+            clear_s2 = self._read_tif(s2cf_path)
+            cloudy = cloudy_s2[self.LISS4_BAND_MAP]
+            clear = clear_s2[self.LISS4_BAND_MAP]
+            
+            sar = np.clip(sar / 10000.0, -1.0, 1.0)
+            cloudy = np.clip(cloudy / 3000.0, 0.0, 1.0)
+            clear = np.clip(clear / 3000.0, 0.0, 1.0)
+            
+            sar = torch.tensor(sar, dtype=torch.float32)
+            cloudy = torch.tensor(cloudy, dtype=torch.float32)
+            clear = torch.tensor(clear, dtype=torch.float32)
         
         # Random crop to patch_size
         H, W = cloudy.shape[1], cloudy.shape[2]
         if H > self.patch_size and W > self.patch_size:
             top = np.random.randint(0, H - self.patch_size)
             left = np.random.randint(0, W - self.patch_size)
-            slice_obj = (slice(None), slice(top, top + self.patch_size), slice(left, left + self.patch_size))
-            sar = sar[slice_obj]
-            cloudy = cloudy[slice_obj]
-            clear = clear[slice_obj]
+            sar = sar[:, top:top + self.patch_size, left:left + self.patch_size]
+            cloudy = cloudy[:, top:top + self.patch_size, left:left + self.patch_size]
+            clear = clear[:, top:top + self.patch_size, left:left + self.patch_size]
             
         # Data Augmentation (Flips)
         if np.random.rand() > 0.5:
-            sar = np.flip(sar, axis=1).copy()
-            cloudy = np.flip(cloudy, axis=1).copy()
-            clear = np.flip(clear, axis=1).copy()
+            sar = torch.flip(sar, dims=[1])
+            cloudy = torch.flip(cloudy, dims=[1])
+            clear = torch.flip(clear, dims=[1])
         if np.random.rand() > 0.5:
-            sar = np.flip(sar, axis=2).copy()
-            cloudy = np.flip(cloudy, axis=2).copy()
-            clear = np.flip(clear, axis=2).copy()
+            sar = torch.flip(sar, dims=[2])
+            cloudy = torch.flip(cloudy, dims=[2])
+            clear = torch.flip(clear, dims=[2])
             
-        return (
-            torch.tensor(sar, dtype=torch.float32),
-            torch.tensor(cloudy, dtype=torch.float32),
-            torch.tensor(clear, dtype=torch.float32)
-        )
+        return sar, cloudy, clear
 
 class LISS4RealDataset(Dataset):
     """
