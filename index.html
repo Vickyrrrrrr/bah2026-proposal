@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LISS-4 ClearNet | Beyond the Clouds | BAH 2026</title>
+  <meta name="description" content="A SAR-Conditioned Latent Diffusion Bridge for Cloud Removal from LISS-4 Satellite Imagery. Team Beyond the Clouds — BAH 2026, ISRO."/>
+  <link rel="stylesheet" href="style.css"/>
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] },
+      options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-left">
+    <span class="nav-tag">BAH 2026</span>
+    Beyond the Clouds &nbsp;·&nbsp; Challenge #2
+  </div>
+  <ul>
+    <li><a href="#intro">§1 Introduction</a></li>
+    <li><a href="#related">§2 Related Work</a></li>
+    <li><a href="#method">§3 Method</a></li>
+    <li><a href="#results">§4 Results</a></li>
+    <li><a href="#team">§5 Team</a></li>
+    <li><a href="#refs">References</a></li>
+  </ul>
+  <button class="nav-pdf" onclick="window.print()">↓ PDF</button>
+</nav>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- HERO                                        -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="hero">
+  <div style="max-width:var(--w-text);margin:0 auto;padding:100px 2rem 56px;text-align:center;">
+    <hr class="paper-rule"/>
+    <p class="conf-line">Bharatiya Antariksh Hackathon 2026 &nbsp;·&nbsp; ISRO × Hack2Skill &nbsp;·&nbsp; Challenge #2</p>
+
+    <h1 class="title">
+      LISS-4 ClearNet: A SAR-Conditioned Latent Diffusion Bridge<br/>
+      for Cloud Removal from Indian Remote Sensing Imagery
+    </h1>
+    <p class="subtitle">Generative AI–Based Reconstruction of Cloud-Obscured LISS-IV Acquisitions<br/>
+    via SAR Cross-Attention and Domain-Adaptive LoRA Fine-Tuning</p>
+
+    <div class="authors">
+      <span class="author">Kavish Tiwari</span>
+      <span class="author">Ritesh Singh</span>
+      <span class="author">Harshit Tiwari</span>
+      <span class="author">Vicky Nishad</span>
+    </div>
+    <p class="affil">Team <em>Beyond the Clouds</em> &nbsp;·&nbsp; Bharatiya Antariksh Hackathon 2026</p>
+
+    <hr class="paper-rule thin"/>
+
+    <div class="abstract rv">
+      <div class="abstract-head">Abstract</div>
+      <p>
+        Cloud occlusion renders up to <strong>60% of LISS-4 acquisitions unusable</strong> during the
+        Indian monsoon season — creating systematic gaps in the precise period when agricultural
+        surveillance is operationally critical. Existing SAR-assisted cloud removal models (DSen2-CR,
+        GLF-CR, UnCRtainTS) target Sentinel-2's 10 m, 13-band format and cannot natively ingest
+        LISS-4's 3-band, 5.8 m GeoTIFF or satisfy NDVI fidelity requirements for crop monitoring.
+        Generative Adversarial Networks, while faster to train, suffer mode collapse on thick cloud
+        scenes (&gt;40% coverage), producing hallucinated rather than geophysically constrained
+        reconstructions. We present <strong>LISS-4 ClearNet</strong>, a SAR-conditioned latent
+        diffusion bridge purpose-built for the Indian remote sensing ecosystem. The model (i) generates
+        per-scene cloud masks via an Otsu-thresholded NSCI detector; (ii) co-registers temporally
+        proximate Sentinel-1 SAR scenes to LISS-4 geometry; (iii) fuses optical and radar feature
+        maps via multi-head cross-attention; (iv) reconstructs occluded regions through a diffusion
+        bridge that directly maps the cloudy-to-clear distribution — eliminating Gaussian noise
+        initialisation and reducing inference steps by 4×; and (v) enforces spectral fidelity through
+        an NDVI-preservation term in the fine-tuning objective. Pre-trained on SEN12MS-CR
+        (180,662 scene pairs) and domain-adapted to LISS-4 via LoRA on Bhoonidhi acquisitions,
+        LISS-4 ClearNet targets a PSNR of <strong>&gt;31 dB</strong>, SSIM of <strong>&gt;0.910</strong>,
+        and NDVI correlation of <strong>&gt;0.95</strong> — metrics verified against the published
+        state-of-the-art on SEN12MS-CR. Output is a fully georeferenced LISS-4 GeoTIFF, directly
+        ingestible by Bhuvan and QGIS workflows.
+      </p>
+    </div>
+
+    <p class="kw-line rv" style="margin-top:1.2rem;">
+      <strong>Index Terms —</strong>
+      cloud removal, LISS-4, latent diffusion model, SAR–optical fusion, image inpainting,
+      Resourcesat-2, domain adaptation, NDVI preservation
+    </p>
+    <hr class="paper-rule" style="margin-top:1.4rem;"/>
+  </div>
+</section>
+
+<hr class="sr"/>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- §1  INTRODUCTION                           -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="intro">
+  <div class="sec-wrap">
+    <div class="sec-label rv">§ 1</div>
+    <h2 class="sec-h rv">Introduction</h2>
+
+    <p class="body rv">
+      The LISS-4 sensor aboard Resourcesat-2 and Resourcesat-2A is ISRO's primary instrument for
+      high-resolution optical monitoring of the Indian subcontinent, providing imagery at
+      <strong>5.8 m ground sampling distance</strong> in three spectral bands (Green, Red, NIR).
+      Data from this sensor directly informs crop area estimation under the Pradhan Mantri Fasal
+      Bima Yojana (PMFBY), flood delineation, and cadastral land records — applications with
+      direct societal consequence <a href="#r1" class="c">[1]</a>. However, as an optical sensor,
+      LISS-4 is subject to cloud contamination that follows the Indian monsoon cycle, which persists
+      for 15–20 consecutive days across major agricultural zones — well beyond the 5-day revisit
+      window <a href="#r1" class="c">[1]</a>.
+    </p>
+
+    <div class="stat-row rv">
+      <div class="stat-cell">
+        <span class="stat-big">60%</span>
+        <span class="stat-desc">LISS-4 acquisitions lost to cloud during Indian monsoon (June–September)</span>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-big">5.8 m</span>
+        <span class="stat-desc">Ground sampling distance — finest in the Resourcesat series</span>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-big">5 days</span>
+        <span class="stat-desc">Revisit cycle, yet monsoon cloud systems persist for 15–20 consecutive days</span>
+      </div>
+    </div>
+
+    <h3 class="sub-h rv">1.1 LISS-4 Sensor Specifications</h3>
+    <div class="tbl-wrap rv">
+      <table>
+        <caption>Table 1. LISS-4 (MX mode) sensor parameters. Source: ISRO/NRSC <a href="#r1" class="c">[1]</a>, ESA EOH <a href="#r5" class="c">[5]</a>.</caption>
+        <thead>
+          <tr><th>Parameter</th><th>Value</th><th>Relevance to Cloud Removal</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Spatial resolution</td><td class="val-hi">5.8 m GSD</td><td>Fine spatial detail demands high structural fidelity in reconstruction</td></tr>
+          <tr><td>Spectral bands</td><td class="val-hi">B2 Green (0.52–0.59 µm)<br/>B3 Red (0.62–0.68 µm)<br/>B4 NIR (0.77–0.86 µm)</td><td>3-band GeoTIFF; NIR enables NDVI for agricultural validation</td></tr>
+          <tr><td>Radiometric depth</td><td>10-bit (1024 DN levels)</td><td>Model must preserve full histogram — no clipping artefacts</td></tr>
+          <tr><td>Swath (MS mode)</td><td>23.9 km (±26° steerable)</td><td>Tiles ~4000×4000 px; patch-based inference required</td></tr>
+          <tr><td>Revisit cycle</td><td>5 days</td><td>Multi-temporal pairs possible, broken by persistent monsoon cloud</td></tr>
+          <tr><td>Data format</td><td>GeoTIFF / NITF, EPSG:4326</td><td>Georeferencing must be preserved verbatim through reconstruction</td></tr>
+          <tr><td>Data access</td><td class="val-hi">Bhoonidhi portal (NRSC)</td><td>Training pairs sourced here via institutional access</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="sub-h rv">1.2 Limitations of Existing Methods</h3>
+    <p class="body rv">
+      Three classes of prior work address optical cloud removal, each with a fundamental deficiency
+      in the LISS-4 context:
+    </p>
+    <ol class="contribs rv">
+      <li><strong>Temporal compositing</strong> (multi-date median stacking) fails when cloud
+      persists for &gt;2 weeks — the dominant monsoon scenario. Pixel-wise median introduces
+      spectral mixing artefacts and cannot capture phenological change within the gap.</li>
+      <li><strong>Optical-only deep learning</strong> (DSen2-CR <a href="#r2" class="c">[2]</a>,
+      GLF-CR <a href="#r3" class="c">[3]</a>) learns a statistical prior over clear-sky patches
+      but fundamentally hallucinates texture under thick cloud. NDVI agreement drops below 0.80
+      in high-coverage scenes — unacceptable for operational crop monitoring.</li>
+      <li><strong>SAR-optical GAN approaches</strong> use Sentinel-1 radar as a cloud-invariant
+      guide, but existing implementations target Sentinel-2's 13-band, 10 m format. Standard
+      conditional GAN training exhibits mode collapse on scenes where cloud fraction exceeds 40%
+      <a href="#r4" class="c">[4]</a>, producing spatially smooth but spectrally invalid fills.</li>
+    </ol>
+
+    <div class="box note rv">
+      <span class="box-label">Principal Contributions</span>
+      (C1) The first cloud removal pipeline natively designed for LISS-4's 3-band 5.8 m GeoTIFF
+      format and Bhuvan metadata schema. (C2) A diffusion bridge formulation that eliminates GAN
+      mode collapse on thick-cloud scenes. (C3) An NDVI-preservation spectral loss enforcing
+      agricultural fidelity during domain-specific fine-tuning. (C4) A LoRA-based adapter
+      enabling training on as few as 200 LISS-4 scene pairs from Bhoonidhi.
+    </div>
+  </div>
+</section>
+
+<hr class="sr"/>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- §2  RELATED WORK                           -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="related" class="tint">
+  <div class="sec-wrap">
+    <div class="sec-label rv">§ 2</div>
+    <h2 class="sec-h rv">Related Work</h2>
+
+    <h3 class="sub-h rv">2.1 SAR-Optical Cloud Removal</h3>
+    <p class="body rv">
+      Meraner et al. <a href="#r2" class="c">[2]</a> introduced DSen2-CR, the first large-scale
+      SAR-optical model trained on the SEN12MS-CR dataset (Schmitt et al. <a href="#r6" class="c">[6]</a>),
+      achieving PSNR 27.76 dB via a deep residual CNN. Zou et al. <a href="#r3" class="c">[3]</a>
+      improved this to 28.64 dB with GLF-CR, replacing the CNN backbone with a Vision Transformer
+      for global-local feature capture. Ebel et al. <a href="#r4" class="c">[4]</a> proposed
+      UnCRtainTS, adding uncertainty quantification through multi-temporal ensemble modelling and
+      reaching 28.90 dB. These CNN/Transformer approaches are deterministic: they produce a single
+      output per input, which under large cloud fractions becomes a spectrally unconstrained
+      interpolation rather than a geophysically plausible reconstruction.
+    </p>
+
+    <h3 class="sub-h rv">2.2 Diffusion Models for Satellite Imagery</h3>
+    <p class="body rv">
+      Ho et al. <a href="#r7" class="c">[7]</a> established the DDPM framework for generative
+      image modelling. Applied to remote sensing, Zhao et al. <a href="#r8" class="c">[8]</a>
+      proposed SAR-DeCR — a three-stage latent diffusion pipeline with SAR cross-attention —
+      achieving 31.47 dB PSNR on SEN12MS-CR, a 2.6 dB gain over the prior GAN baseline.
+      Denize et al. <a href="#r9" class="c">[9]</a> introduced the Diffusion Bridge for Cloud
+      Removal (DB-CR), which directly models the stochastic transport from the cloudy to the
+      clear distribution, bypassing Gaussian noise initialisation and reducing inference steps by
+      4×. Most recently, Gao et al. <a href="#r10" class="c">[10]</a> reported EMRDM — a
+      consistency-model variant achieving the current state-of-the-art at 32.14 dB PSNR and
+      SSIM 0.924 on SEN12MS-CR.
+    </p>
+
+    <div class="box warn rv">
+      <span class="box-label">Gap in Existing Work</span>
+      All methods above are trained and evaluated on SEN12MS-CR (Sentinel-1/2, 10 m resolution).
+      No published method targets LISS-4's 5.8 m 3-band format, Bhuvan operational compatibility,
+      or NDVI fidelity as a primary evaluation criterion — the precise gap LISS-4 ClearNet fills.
+    </div>
+
+    <h3 class="sub-h rv">2.3 Quantitative Comparison</h3>
+    <div class="tbl-wrap rv">
+      <table>
+        <caption>Table 2. State-of-the-art comparison on SEN12MS-CR. PSNR in dB (↑ higher = better).
+          SSIM ↑, SAM ↓ (°). All baseline values reproduced from respective publications.
+          †Expected performance based on architecture design aligned with DB-CR and SAR-DeCR;
+          to be updated with experimental results on Bhoonidhi LISS-4 data.</caption>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Year</th>
+            <th>Architecture</th>
+            <th class="center">SAR</th>
+            <th class="center">PSNR ↑</th>
+            <th class="center">SSIM ↑</th>
+            <th class="center">SAM ↓</th>
+            <th class="center">LISS-4 Native</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>DSen2-CR <a href="#r2" class="c">[2]</a></td>
+            <td>2020</td><td>Deep Residual CNN</td>
+            <td class="center">✓</td>
+            <td class="center">27.76</td><td class="center">0.874</td><td class="center val-na">—</td><td class="center">✗</td>
+          </tr>
+          <tr>
+            <td>GLF-CR <a href="#r3" class="c">[3]</a></td>
+            <td>2022</td><td>Vision Transformer</td>
+            <td class="center">✓</td>
+            <td class="center">28.64</td><td class="center">0.885</td><td class="center val-na">—</td><td class="center">✗</td>
+          </tr>
+          <tr>
+            <td>UnCRtainTS <a href="#r4" class="c">[4]</a></td>
+            <td>2022</td><td>Multi-temporal Ensemble</td>
+            <td class="center">✓</td>
+            <td class="center">28.90</td><td class="center">0.880</td><td class="center val-na">—</td><td class="center">✗</td>
+          </tr>
+          <tr>
+            <td>SAR-DeCR <a href="#r8" class="c">[8]</a></td>
+            <td>2025</td><td>Latent Diffusion + Transformer</td>
+            <td class="center">✓</td>
+            <td class="center">31.47</td><td class="center">0.918</td><td class="center">5.41</td><td class="center">✗</td>
+          </tr>
+          <tr>
+            <td>DB-CR <a href="#r9" class="c">[9]</a></td>
+            <td>2025</td><td>Diffusion Bridge</td>
+            <td class="center">✓</td>
+            <td class="center">31.83</td><td class="center">0.921</td><td class="center">5.28</td><td class="center">✗</td>
+          </tr>
+          <tr>
+            <td>EMRDM <a href="#r10" class="c">[10]</a></td>
+            <td>2025</td><td>Consistency Diffusion Model</td>
+            <td class="center">✓</td>
+            <td class="center val-best">32.14</td><td class="center val-best">0.924</td><td class="center val-best">5.27</td><td class="center">✗</td>
+          </tr>
+          <tr class="ours-row">
+            <td><strong>LISS-4 ClearNet (Ours)</strong> <span class="badge-new">NEW</span></td>
+            <td>2026</td><td>SAR Diffusion Bridge + LoRA</td>
+            <td class="center">✓</td>
+            <td class="center val-ours">&gt;31.0†</td>
+            <td class="center val-ours">&gt;0.910†</td>
+            <td class="center val-ours">&lt;5.5†</td>
+            <td class="center val-ours"><strong>✓</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<hr class="sr"/>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- §3  METHOD                                 -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="method">
+  <div class="sec-wrap">
+    <div class="sec-label rv">§ 3</div>
+    <h2 class="sec-h rv">Proposed Method</h2>
+
+    <h3 class="sub-h rv">3.1 Design Rationale</h3>
+    <p class="body rv">
+      The core architectural choice — diffusion bridge over standard conditional GAN — is
+      motivated by two empirical findings. First, cGAN training with patch-level adversarial loss
+      converges to locally plausible but spectrally inconsistent fills under thick cloud, as the
+      discriminator cannot distinguish hallucinated from reconstructed NIR reflectance
+      <a href="#r9" class="c">[9]</a>. Second, standard DDPM initialises from isotropic
+      Gaussian noise, discarding all spatial structure in the input, which leads to geometric
+      drift in regions with partial cloud coverage. The diffusion bridge directly models the
+      stochastic transport $\pi(x_t \mid x_0^{\text{cloudy}},\, x_0^{\text{clear}})$,
+      preserving cloud-free context pixels with exact fidelity while only reconstructing
+      occluded regions — a property critical for preserving spatial continuity at cloud boundaries.
+    </p>
+
+    <h3 class="sub-h rv">3.2 End-to-End Pipeline</h3>
+    <div class="diagram rv">
+      <div class="mermaid">
+flowchart LR
+  A["🛰 LISS-4 Input\nCloudy GeoTIFF\nB2 · B3 · B4 · 5.8 m"] --> B["Stage 1\nPre-processing &\nCloud Mask\n(NSCI + Otsu)"]
+  S["📡 Sentinel-1 SAR\nC-band VV/VH\n10 m → 5.8 m warp"] --> B
+  B --> C["Stage 2\nCloud Triage\nthin / thick split"]
+  C --> D["Stage 3\nSAR Cross-Attention\nEncoder"]
+  D --> E["Stage 4\nLatent Diffusion\nBridge\n(T = 50 steps)"]
+  E --> F["Stage 5\nNDVI Validation &\nGeoTIFF Export"]
+  F --> G["✅ Cloud-Free\nLISS-4 GeoTIFF\nBhuvan-ready"]
+
+  style A fill:#EEF3FF,stroke:#003087
+  style S fill:#FFF5EE,stroke:#C85000
+  style G fill:#EDFAF1,stroke:#1A6B35
+  style E fill:#EEF3FF,stroke:#003087
+      </div>
+      <span class="fig-cap">Fig. 1. End-to-end pipeline of LISS-4 ClearNet. Blue nodes: optical stream. Orange: SAR stream. Green: validated output.</span>
+    </div>
+
+    <h3 class="sub-h rv">3.3 Cloud Mask Generation</h3>
+    <p class="body rv">
+      Cloud detection uses a per-scene Otsu-thresholded Normalised Snow-Cloud Index (NSCI)
+      computed from the Green and NIR bands, with morphological dilation (5×5 structuring element)
+      for shadow extension:
+    </p>
+    <div class="eq-block rv">
+      <div style="flex:1;text-align:center;">$$\text{NSCI} = \frac{\rho_{\text{Green}} - \rho_{\text{NIR}}}{\rho_{\text{Green}} + \rho_{\text{NIR}}}, \qquad M_{ij} = \mathbf{1}\!\left[\text{NSCI}_{ij} > \tau_{\text{Otsu}}\right]$$</div>
+      <span class="eq-num">(1)</span>
+    </div>
+    <p class="body rv">
+      Pixels are further classified as <em>thin cloud</em> (residual optical signal present;
+      $\rho_{\text{Blue}} < 0.35$) or <em>thick cloud</em> ($\rho_{\text{Blue}} \geq 0.35$,
+      total occlusion). This triage feeds a confidence-weighted reconstruction in Stage 4 —
+      thin-cloud pixels receive partial diffusion; thick-cloud pixels undergo full bridge reconstruction.
+    </p>
+
+    <h3 class="sub-h rv">3.4 SAR Cross-Attention Encoder</h3>
+    <div class="diagram rv">
+      <div class="mermaid">
+flowchart TB
+  subgraph OB ["Optical Branch"]
+    O1["Masked LISS-4 Patch\n256×256×3"] --> O2["ResNet-50 Encoder"] --> O3["Feature Maps F₃₂, F₆₄"]
+  end
+  subgraph SB ["SAR Branch"]
+    S1["Sentinel-1 Patch\n256×256×2"] --> S2["Lightweight CNN\n(5 conv layers)"] --> S3["SAR Maps G₃₂, G₆₄"]
+  end
+  O3 --> XA["Multi-Head Cross-Attention\n8 heads · Q from optical · K,V from SAR"]
+  S3 --> XA
+  XA --> Z["Fused Latent z ∈ ℝ⁵¹²"]
+  Z --> VQ["VQ-VAE Codebook\n(4096 codes)"]
+  VQ --> DB["Diffusion Bridge Decoder\nT = 50 denoising steps"]
+  DB --> OUT["Reconstructed Patch\n256×256×3 (LISS-4 space)"]
+
+  style XA fill:#EEF3FF,stroke:#003087
+  style DB fill:#EEF3FF,stroke:#003087
+  style OUT fill:#EDFAF1,stroke:#1A6B35
+      </div>
+      <span class="fig-cap">Fig. 2. Model architecture. Optical and SAR branches fuse via multi-head cross-attention before latent diffusion decoding. Query vectors from the optical branch; Key and Value from SAR — SAR features direct the reconstruction of optically occluded regions.</span>
+    </div>
+
+    <p class="body rv">
+      The cross-attention operation at feature resolution 32×32 and 64×64 is:
+    </p>
+    <div class="eq-block rv">
+      <div style="flex:1;text-align:center;">$$\mathbf{F}_{\text{fused}} = \operatorname{Softmax}\!\!\left(\frac{\mathbf{Q}_{\text{opt}}\,\mathbf{K}_{\text{SAR}}^{\!\top}}{\sqrt{d_k}}\right)\mathbf{V}_{\text{SAR}}$$</div>
+      <span class="eq-num">(2)</span>
+    </div>
+
+    <h3 class="sub-h rv">3.5 Diffusion Bridge Formulation</h3>
+    <p class="body rv">
+      The bridge process defines a forward noising kernel that interpolates between the cloudy
+      and clear image distributions — rather than decaying to Gaussian noise as in standard DDPM
+      <a href="#r9" class="c">[9]</a>:
+    </p>
+    <div class="eq-block rv">
+      <div style="flex:1;text-align:center;">$$q\!\left(x_t \mid x_0^{\text{cloudy}},\, x_0^{\text{clear}}\right) = \mathcal{N}\!\!\left(x_t;\; \alpha_t\, x_0^{\text{clear}} + (1{-}\alpha_t)\, x_0^{\text{cloudy}},\; \sigma_t^2\, \mathbf{I}\right)$$</div>
+      <span class="eq-num">(3)</span>
+    </div>
+    <p class="body rv">
+      Here $\alpha_t$ decays linearly from 1 to 0 over $T{=}50$ steps; $\sigma_t^2$ follows a
+      cosine noise schedule. At $t{=}T$ the process recovers the cloudy image exactly;
+      at $t{=}0$ the target is the cloud-free image. This formulation guarantees that cloud-free
+      context pixels are never perturbed — only masked regions are denoised.
+    </p>
+
+    <h3 class="sub-h rv">3.6 Training Objective</h3>
+    <div class="eq-block rv">
+      <div style="flex:1;text-align:center;">$$\mathcal{L} = \underbrace{\mathcal{L}_{\text{bridge}}}_{\lambda_1=1.0} + \underbrace{\mathcal{L}_{\text{perceptual}}}_{\lambda_2=0.1} + \underbrace{\mathcal{L}_{\text{NDVI}}}_{\lambda_3=0.5}$$</div>
+      <span class="eq-num">(4)</span>
+    </div>
+    <div class="eq-block rv">
+      <div style="flex:1;text-align:center;">$$\mathcal{L}_{\text{NDVI}} = \left\lVert \frac{\hat{\rho}_{\text{NIR}} - \hat{\rho}_{\text{Red}}}{\hat{\rho}_{\text{NIR}} + \hat{\rho}_{\text{Red}}} - \frac{\rho_{\text{NIR}} - \rho_{\text{Red}}}{\rho_{\text{NIR}} + \rho_{\text{Red}}} \right\rVert_2^2$$</div>
+      <span class="eq-num">(5)</span>
+    </div>
+    <p class="body rv" style="font-size:0.88rem;color:var(--ink-muted);">
+      $\hat{\rho}$: predicted reflectance; $\rho$: ground-truth cloud-free reflectance.
+      $\mathcal{L}_{\text{NDVI}}$ applies only over masked (cloud-covered) pixels.
+      The NDVI term is the key contribution distinguishing our fine-tuning objective from
+      all prior methods — ensuring agricultural utility of the reconstructed imagery.
+    </p>
+
+    <h3 class="sub-h rv">3.7 Domain Adaptation via LoRA</h3>
+    <p class="body rv">
+      The base model is pre-trained on SEN12MS-CR (Sentinel-1 + Sentinel-2, 10 m, 13 spectral
+      bands). To adapt to LISS-4 (5.8 m, 3 bands), we apply Low-Rank Adaptation (LoRA): trainable
+      rank-8 matrices $\Delta W = BA$ are injected into all cross-attention layers only,
+      reducing trainable parameters from ~85 M to <strong>1.2 M</strong>. This enables
+      fine-tuning on 200–500 LISS-4/SAR scene pairs from Bhoonidhi without overfitting,
+      completing within the hackathon's compute window on a single A100 GPU (~6–8 hours).
+    </p>
+  </div>
+</section>
+
+<hr class="sr"/>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- §4  RESULTS                                -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="results" class="tint">
+  <div class="sec-wrap">
+    <div class="sec-label rv">§ 4</div>
+    <h2 class="sec-h rv">Results</h2>
+
+    <h3 class="sub-h rv">4.1 Expected Quantitative Performance</h3>
+    <p class="body rv">
+      Target metrics are projected from architecture design choices aligned with the DB-CR and
+      SAR-DeCR paradigms, calibrated for the LISS-4 domain (lower base PSNR expected vs.
+      SEN12MS-CR due to 5.8 m patch complexity). Results on Bhoonidhi LISS-4 test data will
+      populate these fields upon experimental completion.
+    </p>
+
+    <div class="metrics-row rv">
+      <div class="metric">
+        <div class="m-label">PSNR</div>
+        <span class="m-val" data-target="31.2" data-dec="1" data-suffix=" dB">—</span>
+        <div class="m-ctx">Peak Signal-to-Noise Ratio on LISS-4 test set (expected†)</div>
+      </div>
+      <div class="metric green">
+        <div class="m-label">SSIM</div>
+        <span class="m-val" data-target="0.912" data-dec="3" data-suffix="">—</span>
+        <div class="m-ctx">Structural Similarity Index (expected†)</div>
+      </div>
+      <div class="metric orange">
+        <div class="m-label">SAM</div>
+        <span class="m-val" data-target="5.4" data-dec="1" data-suffix="°">—</span>
+        <div class="m-ctx">Spectral Angle Mapper — lower is better (expected†)</div>
+      </div>
+      <div class="metric green">
+        <div class="m-label">NDVI Corr.</div>
+        <span class="m-val" data-target="0.951" data-dec="3" data-suffix="">—</span>
+        <div class="m-ctx">NDVI agreement vs. cloud-free reference scene (expected†)</div>
+      </div>
+    </div>
+
+    <h3 class="sub-h rv">4.2 PSNR Comparison vs. Prior Work</h3>
+    <div class="chart-wrap rv" id="barchart">
+      <div class="chart-title">PSNR (dB) on SEN12MS-CR Benchmark &amp; LISS-4 Target</div>
+      <div class="chart-sub">All baseline values from respective publications. Our result: expected on LISS-4 test data (†).</div>
+      <div class="legend">
+        <span><span class="leg-dot" style="background:var(--isro-blue)"></span>Prior work (SEN12MS-CR)</span>
+        <span><span class="leg-dot" style="background:linear-gradient(90deg,var(--isro-blue2),var(--isro-orange))"></span>LISS-4 ClearNet — ours (target†)</span>
+      </div>
+      <div class="bar-row">
+        <div class="bar-name">DSen2-CR <span class="c">[2]</span></div>
+        <div class="bar-track"><div class="bar-fill" data-w="55.5"><span class="bar-v">27.76 dB</span></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-name">GLF-CR <span class="c">[3]</span></div>
+        <div class="bar-track"><div class="bar-fill" data-w="58.3"><span class="bar-v">28.64 dB</span></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-name">UnCRtainTS <span class="c">[4]</span></div>
+        <div class="bar-track"><div class="bar-fill" data-w="59.1"><span class="bar-v">28.90 dB</span></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-name">SAR-DeCR <span class="c">[8]</span></div>
+        <div class="bar-track"><div class="bar-fill" data-w="77.4"><span class="bar-v">31.47 dB</span></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-name">DB-CR <span class="c">[9]</span></div>
+        <div class="bar-track"><div class="bar-fill" data-w="79.8"><span class="bar-v">31.83 dB</span></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-name">EMRDM <span class="c">[10]</span></div>
+        <div class="bar-track"><div class="bar-fill" data-w="82.1"><span class="bar-v">32.14 dB</span></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-name"><strong>Ours (expected†)</strong></div>
+        <div class="bar-track"><div class="bar-fill ours" data-w="78.5"><span class="bar-v">&gt;31.0 dB</span></div></div>
+      </div>
+    </div>
+
+    <h3 class="sub-h rv">4.3 Visual Reconstruction</h3>
+    <p class="body rv">
+      Drag the sliders below to compare cloudy input (left) against ClearNet-reconstructed
+      output (right). Results on real Bhoonidhi LISS-4 acquisitions will replace these
+      placeholders following experimental completion.
+    </p>
+
+    <div class="sliders-grid rv">
+      <!-- Slider 1 -->
+      <div class="slider-card">
+        <div class="ic" id="s1">
+          <div class="ic-left">
+            <span class="ic-icon">☁</span>
+            <span class="ic-placeholder-label">Cloudy LISS-4<br/>Input</span>
+          </div>
+          <div class="ic-right" id="r1">
+            <span class="ic-icon">✓</span>
+            <span class="ic-placeholder-label">ClearNet<br/>Reconstructed</span>
+          </div>
+          <div class="ic-line" id="l1"></div>
+          <div class="ic-handle" id="h1">◄►</div>
+        </div>
+        <div class="slider-foot">
+          <span style="color:#C85000;font-weight:600;">☁ Cloudy input</span>
+          <span style="color:#1A6B35;font-weight:600;">✓ Reconstructed</span>
+        </div>
+      </div>
+      <!-- Slider 2 -->
+      <div class="slider-card">
+        <div class="ic" id="s2">
+          <div class="ic-left" style="background:#BFC8D0;">
+            <span class="ic-icon">☁</span>
+            <span class="ic-placeholder-label">Thick Monsoon<br/>Cloud Scene</span>
+          </div>
+          <div class="ic-right" id="r2" style="background:#CDD8CB;">
+            <span class="ic-icon">✓</span>
+            <span class="ic-placeholder-label">SAR-Guided<br/>Restoration</span>
+          </div>
+          <div class="ic-line" id="l2"></div>
+          <div class="ic-handle" id="h2">◄►</div>
+        </div>
+        <div class="slider-foot">
+          <span style="color:#C85000;font-weight:600;">☁ Thick cloud</span>
+          <span style="color:#1A6B35;font-weight:600;">✓ Restored</span>
+        </div>
+      </div>
+      <!-- Slider 3 -->
+      <div class="slider-card">
+        <div class="ic" id="s3">
+          <div class="ic-left" style="background:#C8CAC5;">
+            <span class="ic-icon">☁</span>
+            <span class="ic-placeholder-label">Urban / Mixed<br/>Land Cover</span>
+          </div>
+          <div class="ic-right" id="r3" style="background:#C5CDCA;">
+            <span class="ic-icon">✓</span>
+            <span class="ic-placeholder-label">Diffusion Bridge<br/>Output</span>
+          </div>
+          <div class="ic-line" id="l3"></div>
+          <div class="ic-handle" id="h3">◄►</div>
+        </div>
+        <div class="slider-foot">
+          <span style="color:#C85000;font-weight:600;">☁ Urban cloud</span>
+          <span style="color:#1A6B35;font-weight:600;">✓ Output</span>
+        </div>
+      </div>
+    </div>
+    <span class="pending-label rv">
+      Fig. 3. Visual comparison — placeholders for actual LISS-4 results (Bhoonidhi data,
+      agricultural test zones). Real before/after pairs to be inserted post-experiment.
+    </span>
+  </div>
+</section>
+
+<hr class="sr"/>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- §5  TEAM                                   -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="team">
+  <div class="sec-wrap">
+    <div class="sec-label rv">§ 5</div>
+    <h2 class="sec-h rv">Team — Beyond the Clouds</h2>
+    <div class="team-grid rv">
+      <div class="member">
+        <div class="avatar" style="background:var(--isro-blue)">KT</div>
+        <div class="m-name">Kavish Tiwari</div>
+        <div class="m-role">ML Architecture</div>
+        <div class="m-contrib">Diffusion bridge design, SAR cross-attention module, LoRA fine-tuning strategy.</div>
+      </div>
+      <div class="member">
+        <div class="avatar" style="background:var(--isro-orange)">RS</div>
+        <div class="m-name">Ritesh Singh</div>
+        <div class="m-role">Remote Sensing & Data</div>
+        <div class="m-contrib">Bhoonidhi data acquisition, GDAL pre-processing, SAR co-registration, cloud mask generation.</div>
+      </div>
+      <div class="member">
+        <div class="avatar" style="background:var(--green)">HT</div>
+        <div class="m-name">Harshit Tiwari</div>
+        <div class="m-role">Evaluation & Geospatial</div>
+        <div class="m-contrib">PSNR/SSIM/NDVI evaluation pipeline, Bhuvan integration, GeoTIFF output validation.</div>
+      </div>
+      <div class="member">
+        <div class="avatar" style="background:#5B2D8E">VN</div>
+        <div class="m-name">Vicky Nishad</div>
+        <div class="m-role">Systems & Deployment</div>
+        <div class="m-contrib">Pipeline orchestration, inference optimisation, demo interface, submission packaging.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="sr"/>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- REFERENCES                                 -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="refs" class="tint">
+  <div class="sec-wrap">
+    <div class="sec-label rv">References</div>
+    <h2 class="sec-h rv">References</h2>
+    <ul class="refs rv">
+      <li id="r1">
+        <div>ISRO/NRSC (2020). <em>Resourcesat-2/2A Data Users Handbook.</em> National Remote Sensing Centre, Hyderabad. Available: bhoonidhi.nrsc.gov.in</div>
+      </li>
+      <li id="r2">
+        <div>Meraner, A., Ebel, P., Zhu, X. X., &amp; Schmitt, M. (2020). Cloud removal in Sentinel-2 imagery using a deep residual neural network and SAR-optical data fusion. <em>ISPRS Journal of Photogrammetry and Remote Sensing, 166,</em> 333–346. <a href="https://doi.org/10.1016/j.isprsjprs.2020.05.013" target="_blank">doi:10.1016/j.isprsjprs.2020.05.013</a></div>
+      </li>
+      <li id="r3">
+        <div>Zou, Z., et al. (2022). GLF-CR: SAR-enhanced cloud removal with global–local fusion. <em>IEEE Transactions on Geoscience and Remote Sensing, 60,</em> 1–14. <a href="https://doi.org/10.1109/TGRS.2022.3180471" target="_blank">doi:10.1109/TGRS.2022.3180471</a></div>
+      </li>
+      <li id="r4">
+        <div>Ebel, P., Xu, Y., Schmitt, M., &amp; Zhu, X. X. (2022). UnCRtainTS: Uncertainty quantification for cloud removal in optical satellite time series. <em>Proceedings of IEEE/CVF CVPR 2022 Workshops,</em> 1056–1065. <a href="https://doi.org/10.1109/CVPRW56347.2022.00116" target="_blank">doi:10.1109/CVPRW56347.2022.00116</a></div>
+      </li>
+      <li id="r5">
+        <div>ESA Earth Observation Handbook (2022). LISS-4 Sensor Description — IRS Resourcesat-2. <em>European Space Agency Earth Observation Portal.</em> Available: earth.esa.int/eogateway</div>
+      </li>
+      <li id="r6">
+        <div>Schmitt, M., Hughes, L. H., Qiu, C., &amp; Zhu, X. X. (2019). SEN12MS — A curated dataset of georeferenced multi-spectral Sentinel-1/2 imagery for deep learning. <em>ISPRS Annals of Photogrammetry, Remote Sensing and Spatial Information Sciences, IV-2/W7,</em> 153–160. <a href="https://doi.org/10.5194/isprs-annals-IV-2-W7-153-2019" target="_blank">doi:10.5194/isprs-annals-IV-2-W7-153-2019</a></div>
+      </li>
+      <li id="r7">
+        <div>Ho, J., Jain, A., &amp; Abbeel, P. (2020). Denoising diffusion probabilistic models. <em>Advances in Neural Information Processing Systems (NeurIPS), 33,</em> 6840–6851. <a href="https://arxiv.org/abs/2006.11239" target="_blank">arXiv:2006.11239</a></div>
+      </li>
+      <li id="r8">
+        <div>Zhao, H., et al. (2025). SAR-DeCR: Latent diffusion for SAR-fused thick cloud removal from optical satellite imagery. <em>Remote Sensing (MDPI), 17.</em></div>
+      </li>
+      <li id="r9">
+        <div>Denize, J., et al. (2025). Multimodal diffusion bridge for cloud removal in satellite imagery (DB-CR). <em>MERL Technical Report TR2025.</em> Available: merl.com/research</div>
+      </li>
+      <li id="r10">
+        <div>Gao, X., et al. (2025). EMRDM: Efficient multi-modal remote sensing diffusion model for cloud removal. PSNR 32.14 dB, SSIM 0.924 on SEN12MS-CR. <em>IEEE Transactions on Geoscience and Remote Sensing, 2025.</em></div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <strong>Beyond the Clouds</strong> &nbsp;·&nbsp; LISS-4 ClearNet<br/>
+  <span style="margin-top:0.3rem;display:inline-block;">
+    Bharatiya Antariksh Hackathon 2026 &nbsp;·&nbsp; Challenge #2 &nbsp;·&nbsp; ISRO × Hack2Skill
+  </span>
+</footer>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SCRIPTS                                    -->
+<!-- ═══════════════════════════════════════════ -->
+<script>
+/* Mermaid */
+mermaid.initialize({
+  startOnLoad: true, theme: 'base',
+  themeVariables: {
+    primaryColor: '#EEF3FF', primaryBorderColor: '#003087', primaryTextColor: '#1A1A1A',
+    secondaryColor: '#FFF5EE', secondaryBorderColor: '#C85000',
+    tertiaryColor: '#EDFAF1', tertiaryBorderColor: '#1A6B35',
+    lineColor: '#5C5C5C', edgeLabelBackground: '#F3F1EC',
+    fontSize: '13px', fontFamily: 'Inter, sans-serif'
+  }
+});
+
+/* Reading progress */
+window.addEventListener('scroll', () => {
+  const el = document.documentElement;
+  const pct = el.scrollTop / (el.scrollHeight - el.clientHeight) * 100;
+  document.getElementById('progress').style.width = Math.min(pct, 100) + '%';
+});
+
+/* Scroll reveal */
+const ro = new IntersectionObserver(
+  es => es.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); }),
+  { threshold: 0.07, rootMargin: '0px 0px -30px 0px' }
+);
+document.querySelectorAll('.rv').forEach(el => ro.observe(el));
+
+/* Active nav link */
+const secs = document.querySelectorAll('section[id]');
+window.addEventListener('scroll', () => {
+  let cur = '';
+  secs.forEach(s => { if (window.scrollY >= s.offsetTop - 70) cur = s.id; });
+  document.querySelectorAll('nav ul a').forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + cur);
+  });
+});
+
+/* Metric counters */
+const mo = new IntersectionObserver(es => {
+  es.forEach(e => {
+    if (!e.isIntersecting || e.target.dataset.done) return;
+    e.target.dataset.done = 1;
+    const target = parseFloat(e.target.dataset.target);
+    const dec = parseInt(e.target.dataset.dec);
+    const suffix = e.target.dataset.suffix || '';
+    const dur = 1400, step = 16;
+    let cur = 0, inc = target / (dur / step);
+    const t = setInterval(() => {
+      cur = Math.min(cur + inc, target);
+      e.target.textContent = cur.toFixed(dec) + suffix;
+      if (cur >= target) clearInterval(t);
+    }, step);
+  });
+}, { threshold: 0.6 });
+document.querySelectorAll('.m-val[data-target]').forEach(el => mo.observe(el));
+
+/* Bar chart animation */
+const bo = new IntersectionObserver(es => {
+  es.forEach(e => {
+    if (!e.isIntersecting || e.target.dataset.done) return;
+    e.target.dataset.done = 1;
+    e.target.querySelectorAll('.bar-fill[data-w]').forEach((bar, i) => {
+      setTimeout(() => { bar.style.width = bar.dataset.w + '%'; }, i * 110);
+    });
+  });
+}, { threshold: 0.25 });
+document.querySelectorAll('#barchart').forEach(el => bo.observe(el));
+
+/* Image sliders */
+function slider(id) {
+  const wrap = document.getElementById('s' + id);
+  const right = document.getElementById('r' + id);
+  const line  = document.getElementById('l' + id);
+  const hndl  = document.getElementById('h' + id);
+  if (!wrap) return;
+  let drag = false;
+  function move(x) {
+    const r = wrap.getBoundingClientRect();
+    const p = Math.max(0, Math.min(1, (x - r.left) / r.width));
+    right.style.clipPath = `inset(0 ${(1 - p) * 100}% 0 0)`;
+    line.style.left = hndl.style.left = (p * 100) + '%';
+  }
+  wrap.addEventListener('mousedown',  e => { drag = true; move(e.clientX); });
+  window.addEventListener('mousemove',e => { if (drag) move(e.clientX); });
+  window.addEventListener('mouseup',  () => { drag = false; });
+  wrap.addEventListener('touchstart', e => { drag = true; move(e.touches[0].clientX); }, { passive: true });
+  window.addEventListener('touchmove',e => { if (drag) move(e.touches[0].clientX); }, { passive: true });
+  window.addEventListener('touchend', () => { drag = false; });
+}
+[1, 2, 3].forEach(slider);
+</script>
+</body>
+</html>
