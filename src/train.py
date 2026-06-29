@@ -48,8 +48,8 @@ def train(args):
     train_ds = SEN12MS_LISS4_SimulationDataset(args.data_dir, split="train")
     val_ds = SEN12MS_LISS4_SimulationDataset(args.data_dir, split="val")
     
-    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=0, pin_memory=True)
-    val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, num_workers=0, pin_memory=True)
+    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=0, pin_memory=False)
+    val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, num_workers=0, pin_memory=False)
     
     # 2. Instantiate Model, Optimizer, and Cosine Scheduler
     model = LISS4ClearNet(num_res_blocks=args.num_res_blocks, channel_dim=args.channel_dim).to(device)
@@ -92,6 +92,10 @@ def train(args):
             optimizer.step()
             
             train_loss += loss.item()
+            
+            # Print progress every 50 batches for live feedback
+            if batch_idx % 50 == 0:
+                print(f"  Batch {batch_idx:3d}/{len(train_loader)} | Current Loss: {loss.item():.5f}")
             
         scheduler.step()
         train_loss /= len(train_loader)
