@@ -26,35 +26,41 @@ class SEN12MS_LISS4_SimulationDataset(Dataset):
             for season_dir in self.root.iterdir():
                 if not season_dir.is_dir():
                     continue
-                s1_dir = season_dir / 'ROIs1158_spring_s1'
-                s2c_dir = season_dir / 'ROIs1158_spring_s2_cloudy'
-                s2cf_dir = season_dir / 'ROIs1158_spring_s2'
+                s1_dirs = [season_dir / 'ROIs1158_spring_s1', season_dir / 's1']
+                s2c_dirs = [season_dir / 'ROIs1158_spring_s2_cloudy', season_dir / 's2_cloudy']
+                s2cf_dirs = [season_dir / 'ROIs1158_spring_s2', season_dir / 's2', season_dir / 's2_cloud_free']
                 
-                # Fallback support for standard folder names
-                if not s1_dir.exists():
-                    s1_dir = season_dir / 's1'
-                if not s2c_dir.exists():
-                    s2c_dir = season_dir / 's2_cloudy'
-                if not s2cf_dir.exists():
-                    s2cf_dir = season_dir / 's2_cloud_free'
+                s1_dir = next((d for d in s1_dirs if d.exists()), None)
+                s2c_dir = next((d for d in s2c_dirs if d.exists()), None)
+                s2cf_dir = next((d for d in s2cf_dirs if d.exists()), None)
                 
-                if s1_dir.exists() and s2c_dir.exists() and s2cf_dir.exists():
+                if s1_dir and s2c_dir and s2cf_dir:
+                    import re
                     s1_files = sorted(s1_dir.glob('**/*.tif'))
                     for s1_f in s1_files:
                         filename = s1_f.name
-                        if '_s1_' in filename:
-                            # Extract suffix index (e.g. "1_p15" from "ROIs1158_spring_s1_1_p15.tif")
-                            idx = filename.split('_s1_')[-1].replace('.tif', '')
-                            s2c_f = s2c_dir / f"ROIs1158_spring_s2_cloudy_{idx}.tif"
-                            s2cf_f = s2cf_dir / f"ROIs1158_spring_s2_{idx}.tif"
+                        # Match suffix (e.g., "1_p15" from "s1_1_p15.tif" or "ROIs1158_spring_s1_1_p15.tif")
+                        match = re.search(r's1_(\d+_p\d+)\.tif$', filename)
+                        if match:
+                            idx = match.group(1)
                             
-                            # Fallback if standard suffix is used
-                            if not s2c_f.exists():
-                                s2c_f = s2c_dir / f"s2_{idx}.tif"
-                            if not s2cf_f.exists():
-                                s2cf_f = s2cf_dir / f"s2_{idx}.tif"
-                                
-                            if s2c_f.exists() and s2cf_f.exists():
+                            # Construct possible candidates for Cloudy
+                            s2c_candidates = [
+                                s2c_dir / f"ROIs1158_spring_s2_cloudy_{idx}.tif",
+                                s2c_dir / f"s2_cloudy_{idx}.tif",
+                                s2c_dir / f"s2_{idx}.tif"
+                            ]
+                            # Construct possible candidates for Clear
+                            s2cf_candidates = [
+                                s2cf_dir / f"ROIs1158_spring_s2_{idx}.tif",
+                                s2cf_dir / f"s2_{idx}.tif",
+                                s2cf_dir / f"s2_cloud_free_{idx}.tif"
+                            ]
+                            
+                            s2c_f = next((c for c in s2c_candidates if c.exists()), None)
+                            s2cf_f = next((c for c in s2cf_candidates if c.exists()), None)
+                            
+                            if s2c_f and s2cf_f:
                                 self.pairs.append((s1_f, s2c_f, s2cf_f))
         
         n_samples = len(self.pairs)
