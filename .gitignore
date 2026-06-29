@@ -37,7 +37,6 @@ env/
 # Datasets and model checkpoints (Large Files)
 data/
 checkpoints/
-results/
 *.npy
 *.npz
 *.tif
