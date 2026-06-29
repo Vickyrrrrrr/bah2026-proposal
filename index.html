@@ -23,7 +23,7 @@
 <nav id="nav">
   <div class="nav-left">
     <span class="nav-tag">BAH 2026</span>
-    Beyond the Clouds &nbsp;·&nbsp; Challenge #2
+    <span class="nav-text">Beyond the Clouds &nbsp;·&nbsp; Challenge #2</span>
   </div>
   <ul>
     <li><a href="#intro">Introduction</a></li>
@@ -768,7 +768,12 @@ function slider(id) {
   window.addEventListener('mousemove',e => { if (drag) move(e.clientX); });
   window.addEventListener('mouseup',  () => { drag = false; });
   wrap.addEventListener('touchstart', e => { drag = true; move(e.touches[0].clientX); }, { passive: true });
-  window.addEventListener('touchmove',e => { if (drag) move(e.touches[0].clientX); }, { passive: true });
+  window.addEventListener('touchmove', e => {
+    if (drag) {
+      if (e.cancelable) e.preventDefault();
+      move(e.touches[0].clientX);
+    }
+  }, { passive: false });
   window.addEventListener('touchend', () => { drag = false; });
 }
 [1, 2, 3].forEach(slider);
