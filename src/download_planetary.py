@@ -23,13 +23,24 @@ except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "rasterio"])
     import rasterio
 
-def download_url(url, dest_path):
-    with requests.get(url, stream=True, timeout=60) as r:
-        r.raise_for_status()
-        with open(dest_path, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=16384):
-                f.write(chunk)
-    print(f"  ✅ Downloaded {dest_path.name}")
+import time
+
+def download_url(url, dest_path, retries=3, delay=5):
+    for attempt in range(retries):
+        try:
+            with requests.get(url, stream=True, timeout=60) as r:
+                r.raise_for_status()
+                with open(dest_path, 'wb') as f:
+                    for chunk in r.iter_content(chunk_size=16384):
+                        f.write(chunk)
+            print(f"  ✅ Downloaded {dest_path.name}")
+            return
+        except Exception as e:
+            print(f"  ⚠️ Download failed (Attempt {attempt+1}/{retries}): {e}")
+            if attempt < retries - 1:
+                time.sleep(delay)
+            else:
+                raise e
 
 def main():
     # Target Coordinates (Punjab agricultural crop lands)
