@@ -5,7 +5,6 @@ import modal
 # Define the Modal App
 app = modal.App("liss4-clearnet-training")
 
-# Define the remote container environment
 image = (
     modal.Image.debian_slim()
     .apt_install("git")
@@ -18,6 +17,7 @@ image = (
         "requests",
         "wandb"
     )
+    .add_local_dir("./src", remote_path="/root/src")
 )
 
 # Persistent volume to store dataset and save model checkpoints
@@ -29,7 +29,7 @@ volume = modal.Volume.from_name("liss4-clearnet-volume", create_if_missing=True)
     volumes={"/workspace": volume},
     timeout=7200  # 2 hours maximum run time
 )
-def run_training_remote(epochs: int = 60, batch_size: int = 16):
+def run_training_remote(epochs: int = 60, batch_size: int = 4):
     import torch
     import torch.nn as nn
     import torch.nn.functional as F
@@ -38,16 +38,12 @@ def run_training_remote(epochs: int = 60, batch_size: int = 16):
     from torch.optim.lr_scheduler import CosineAnnealingLR
     import numpy as np
 
-    # 1. Ensure project files are present in the volume workspace
-    # Check if src is available, otherwise copy or clone it
-    workspace_path = "/workspace"
-    src_dir = os.path.join(workspace_path, "src")
-    
-    # Add workspace path to system path for imports
-    sys.path.append(workspace_path)
-    sys.path.append(src_dir)
+    # Add mount path to system path for imports
+    sys.path.append("/root/src")
 
-    # 2. Local imports from the volume
+    workspace_path = "/workspace"
+
+    # 2. Local imports from the mount
     from dataset import SEN12MS_LISS4_SimulationDataset
     from model import LISS4ClearNet
     from train import ndvi_preservation_loss
@@ -61,12 +57,19 @@ def run_training_remote(epochs: int = 60, batch_size: int = 16):
     os.makedirs(checkpoints_dir, exist_ok=True)
 
     # Check if dataset exists in the volume, if not, download it
-    if not os.path.exists(os.path.join(data_dir, "ROIs1158_spring")):
+    dataset_root = os.path.join(data_dir, "ROIs1158_spring")
+    if not os.path.exists(dataset_root) or not os.listdir(dataset_root):
         print("⏳ Dataset not found in persistent volume. Downloading dataset split...")
-        os.makedirs(data_dir, exist_ok=True)
-        # Import and run download helper
-        from download_helper import download_dataset_split
-        download_dataset_split(data_dir)
+        os.makedirs(dataset_root, exist_ok=True)
+        # Import and run stream extraction helper directly
+        from download_helper import stream_extract_url
+        urls = [
+            "ftp://m1554803:m1554803@dataserv.ub.tum.de/ROIs1158_spring_s1.tar.gz",
+            "ftp://m1554803:m1554803@dataserv.ub.tum.de/ROIs1158_spring_s2_cloudy.tar.gz",
+            "ftp://m1554803:m1554803@dataserv.ub.tum.de/ROIs1158_spring_s2.tar.gz"
+        ]
+        for url in urls:
+            stream_extract_url(url, dataset_root, max_roi=30)
 
     # Initialize Datasets and Loaders
     print("⏳ Loading dataset partitions...")

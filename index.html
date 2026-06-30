@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>LISS-4 ClearNet | Beyond the Clouds | BAH 2026</title>
-  <meta name="description" content="A SAR-Conditioned Latent Diffusion Bridge for Cloud Removal from LISS-4 Satellite Imagery. Team Beyond the Clouds — BAH 2026, ISRO."/>
+  <title>CloudXRecon | BAH 2026</title>
+  <meta name="description" content="A SAR-Conditioned Latent Diffusion Bridge for Cloud Removal from LISS-4 Satellite Imagery. Team CloudXRecon — BAH 2026, ISRO."/>
   <link rel="stylesheet" href="style.css"/>
   <script>
     window.MathJax = {
@@ -23,7 +23,7 @@
 <nav id="nav">
   <div class="nav-left">
     <span class="nav-tag">BAH 2026</span>
-    <span class="nav-text">Beyond the Clouds &nbsp;·&nbsp; Challenge #2</span>
+    <span class="nav-text">CloudXRecon &nbsp;&mdash;&nbsp; Challenge #2</span>
   </div>
   <ul>
     <li><a href="#intro">Introduction</a></li>
@@ -45,7 +45,7 @@
     <p class="conf-line">Bharatiya Antariksh Hackathon 2026 &nbsp;·&nbsp; ISRO × Hack2Skill &nbsp;·&nbsp; Challenge #2</p>
 
     <h1 class="title">
-      LISS-4 ClearNet: A SAR-Conditioned Latent Diffusion Bridge<br/>
+      CloudXRecon: A SAR-Conditioned Latent Diffusion Bridge<br/>
       for Cloud Removal from Indian Remote Sensing Imagery
     </h1>
     <p class="subtitle">Generative AI–Based Reconstruction of Cloud-Obscured LISS-IV Acquisitions<br/>
@@ -57,7 +57,7 @@
       <span class="author">Harshit Tiwari</span>
       <span class="author">Vicky Nishad</span>
     </div>
-    <p class="affil">Team <em>Beyond the Clouds</em> &nbsp;·&nbsp; Bharatiya Antariksh Hackathon 2026</p>
+    <p class="affil">Team <em>CloudXRecon</em> &nbsp;·&nbsp; Bharatiya Antariksh Hackathon 2026</p>
 
     <hr class="paper-rule thin"/>
 
@@ -71,7 +71,7 @@
         LISS-4's 3-band, 5.8 m GeoTIFF or satisfy NDVI fidelity requirements for crop monitoring.
         Generative Adversarial Networks, while faster to train, suffer mode collapse on thick cloud
         scenes (&gt;40% coverage), producing hallucinated rather than geophysically constrained
-        reconstructions. We present <strong>LISS-4 ClearNet</strong>, a SAR-conditioned latent
+        reconstructions. We present <strong>CloudXRecon</strong>, a SAR-conditioned latent
         diffusion bridge purpose-built for the Indian remote sensing ecosystem. The model (i) generates
         per-scene cloud masks via an Otsu-thresholded NSCI detector; (ii) co-registers temporally
         proximate Sentinel-1 SAR scenes to LISS-4 geometry; (iii) fuses optical and radar feature
@@ -80,7 +80,7 @@
         initialisation and reducing inference steps by 4×; and (v) enforces spectral fidelity through
         an NDVI-preservation term in the fine-tuning objective. Pre-trained on SEN12MS-CR
         (180,662 scene pairs) and domain-adapted to LISS-4 via LoRA on Bhoonidhi acquisitions,
-        LISS-4 ClearNet targets a PSNR of <strong>&gt;31 dB</strong>, SSIM of <strong>&gt;0.910</strong>,
+        CloudXRecon targets a PSNR of <strong>&gt;31 dB</strong>, SSIM of <strong>&gt;0.910</strong>,
         and NDVI correlation of <strong>&gt;0.95</strong> — metrics verified against the published
         state-of-the-art on SEN12MS-CR. Output is a fully georeferenced LISS-4 GeoTIFF, directly
         ingestible by Bhuvan and QGIS workflows.
@@ -223,7 +223,7 @@
       <span class="box-label">Gap in Existing Work</span>
       All methods above are trained and evaluated on SEN12MS-CR (Sentinel-1/2, 10 m resolution).
       No published method targets LISS-4's 5.8 m 3-band format, Bhuvan operational compatibility,
-      or NDVI fidelity as a primary evaluation criterion — the precise gap LISS-4 ClearNet fills.
+      or NDVI fidelity as a primary evaluation criterion — the precise gap CloudXRecon fills.
     </div>
 
     <h3 class="sub-h rv">2.3 Quantitative Comparison</h3>
@@ -283,7 +283,7 @@
             <td class="center val-best">32.14</td><td class="center val-best">0.924</td><td class="center val-best">5.27</td><td class="center">✗</td>
           </tr>
           <tr class="ours-row">
-            <td><strong>LISS-4 ClearNet (Ours)</strong> <span class="badge-new">NEW</span></td>
+            <td><strong>CloudXRecon (Ours)</strong> <span class="badge-new">NEW</span></td>
             <td>2026</td><td>SAR Diffusion Bridge + LoRA</td>
             <td class="center">✓</td>
             <td class="center val-ours">&gt;31.0†</td>
@@ -338,7 +338,7 @@ flowchart LR
   style G fill:#EDFAF1,stroke:#1A6B35
   style E fill:#EEF3FF,stroke:#003087
       </div>
-      <span class="fig-cap">Fig. 1. End-to-end pipeline of LISS-4 ClearNet. Blue nodes: optical stream. Orange: SAR stream. Green: validated output.</span>
+      <span class="fig-cap">Fig. 1. End-to-end pipeline of CloudXRecon. Blue nodes: optical stream. Orange: SAR stream. Green: validated output.</span>
     </div>
 
     <h3 class="sub-h rv">3.3 Cloud Mask Generation</h3>
@@ -447,7 +447,7 @@ flowchart TB
 
     <h3 class="sub-h rv">4.1 Quantitative Performance (10-Min Demo Baseline)</h3>
     <p class="body rv">
-      To demonstrate the end-to-end functionality of LISS-4 ClearNet under strict compute limits,
+      To demonstrate the end-to-end functionality of CloudXRecon under strict compute limits,
       we trained a lightweight model adapter (64 channels, 4 residual blocks, 1.2M parameters) for
       only 10 epochs. Below are the actual validation metrics obtained from this rapid training run on 
       monsoon agricultural scenes, showcasing immediate physical convergence.
@@ -478,9 +478,9 @@ flowchart TB
 
     <div class="tbl-wrap rv">
       <table>
-        <caption>Table 2. Quantitative comparison of the 10-Minute Demo Baseline vs. the full-scale LISS-4 ClearNet target configuration.</caption>
+        <caption>Table 2. Quantitative comparison of the 10-Minute Demo Baseline vs. the full-scale CloudXRecon target configuration.</caption>
         <thead>
-          <tr><th>Metric</th><th>10-Min Demo Baseline (Actual)</th><th>Full-Scale ClearNet (Target)</th><th>Operational Significance</th></tr>
+          <tr><th>Metric</th><th>10-Min Demo Baseline (Actual)</th><th>Full-Scale CloudXRecon (Target)</th><th>Operational Significance</th></tr>
         </thead>
         <tbody>
           <tr class="ours-row"><td><strong>PSNR (Peak Signal-to-Noise Ratio)</strong></td><td>19.59 dB</td><td>31.20 dB</td><td>Overall pixel-level reconstruction fidelity</td></tr>
@@ -497,7 +497,7 @@ flowchart TB
       <div class="chart-sub">All baseline values from respective publications. Our result: expected on LISS-4 test data (†).</div>
       <div class="legend">
         <span><span class="leg-dot" style="background:var(--isro-blue)"></span>Prior work (SEN12MS-CR)</span>
-        <span><span class="leg-dot" style="background:linear-gradient(90deg,var(--isro-blue2),var(--isro-orange))"></span>LISS-4 ClearNet — ours (target†)</span>
+        <span><span class="leg-dot" style="background:linear-gradient(90deg,var(--isro-blue2),var(--isro-orange))"></span>CloudXRecon — ours (target†)</span>
       </div>
       <div class="bar-row">
         <div class="bar-name">DSen2-CR <span class="c">[2]</span></div>
@@ -531,7 +531,7 @@ flowchart TB
 
     <h3 class="sub-h rv">4.3 Visual Reconstruction</h3>
     <p class="body rv">
-      Drag the sliders below to compare cloudy input (left) against ClearNet-reconstructed
+      Drag the sliders below to compare cloudy input (left) against CloudXRecon-reconstructed
       output (right). Results on real Bhoonidhi LISS-4 acquisitions will replace these
       placeholders following experimental completion.
     </p>
@@ -584,7 +584,7 @@ flowchart TB
       </div>
     </div>
     <span class="pending-label rv">
-      Fig. 3. Visual comparison slider — actual LISS-4 simulation reconstructions generated by LISS-4 ClearNet (10-minute demo baseline on test split).
+      Fig. 3. Visual comparison slider — actual LISS-4 simulation reconstructions generated by CloudXRecon (10-minute demo baseline on test split).
     </span>
   </div>
 </section>
@@ -597,7 +597,7 @@ flowchart TB
 <section id="team">
   <div class="sec-wrap">
     <div class="sec-label rv">Section 5</div>
-    <h2 class="sec-h rv">Team — Beyond the Clouds</h2>
+    <h2 class="sec-h rv">Team  CloudXRecon</h2>
     <div class="team-grid rv">
       <div class="member">
         <div class="avatar" style="background:var(--isro-blue)">KT</div>
@@ -673,7 +673,7 @@ flowchart TB
 
 <!-- FOOTER -->
 <footer>
-  <strong>Beyond the Clouds</strong> &nbsp;·&nbsp; LISS-4 ClearNet<br/>
+  <strong>CloudXRecon</strong><br/>
   <span style="margin-top:0.3rem;display:inline-block;">
     Bharatiya Antariksh Hackathon 2026 &nbsp;·&nbsp; Challenge #2 &nbsp;·&nbsp; ISRO × Hack2Skill
   </span>
